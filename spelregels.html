@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hardster - Spelregels</title>
+    <!-- Copy ALL styles from index.html -->
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Roboto:wght@300;400;700&display=swap');
+
+        :root {
+            --primary: #ff6600; /* Orange */
+            --secondary: #00ccff; /* Cyan */
+            --bg-dark: #0a0a0a;
+            --bg-light: #1a1a1a;
+            --text: #ffffff;
+            --success: #33cc33; /* Green */
+            --danger: #ff3355; /* Red */
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            min-height: 100vh;
+            background-color: var(--bg-dark);
+            color: var(--text);
+            background-image:
+                radial-gradient(circle at 20% 30%, rgba(255, 102, 0, 0.15) 0%, transparent 40%),
+                radial-gradient(circle at 80% 70%, rgba(0, 204, 255, 0.1) 0%, transparent 40%);
+            padding-top: 80px; /* Increased padding to avoid overlap with fixed menu */
+            padding-bottom: 50px; /* Add padding at bottom */
+        }
+
+        /* --- Collapsible Menu Styles (Copied from index.html) --- */
+        #menu-toggle-btn {
+            position: fixed; /* Fixed positioning */
+            top: 15px;
+            right: 15px;
+            z-index: 1001; /* Ensure it's above the menu */
+            background: rgba(26, 26, 26, 0.8); /* Dark background */
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 5px;
+            width: 45px;
+            height: 40px;
+            cursor: pointer;
+            padding: 8px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-around;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+            /* Reset button styles */
+            margin: 0;
+            text-transform: none;
+            letter-spacing: normal;
+            overflow: visible; /* Ensure spans are visible */
+            transition: background 0.3s ease;
+        }
+
+        #menu-toggle-btn:hover {
+            background: rgba(40, 40, 40, 0.9);
+        }
+
+        #menu-toggle-btn span {
+            display: block;
+            width: 100%;
+            height: 3px;
+            background-color: var(--secondary); /* Cyan lines */
+            border-radius: 1px;
+            transition: transform 0.3s ease, opacity 0.3s ease;
+        }
+
+        /* Animation for hamburger to X */
+        #menu-toggle-btn[aria-expanded="true"] span:nth-child(1) {
+            transform: translateY(8px) rotate(45deg);
+        }
+        #menu-toggle-btn[aria-expanded="true"] span:nth-child(2) {
+            opacity: 0;
+        }
+        #menu-toggle-btn[aria-expanded="true"] span:nth-child(3) {
+            transform: translateY(-8px) rotate(-45deg);
+        }
+
+
+        #collapsible-menu {
+            position: fixed; /* Fixed positioning */
+            top: 65px; /* Position below the button */
+            right: 15px;
+            z-index: 1000; /* Below toggle button, above content */
+            background-color: rgba(20, 20, 20, 0.95); /* Slightly different dark */
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 8px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+            width: 220px; /* Adjust as needed */
+            overflow: hidden; /* Clip content */
+            transition: transform 0.3s ease, opacity 0.3s ease, visibility 0s linear 0.3s; /* Delay visibility change */
+            transform-origin: top right;
+            transform: scale(0.95); /* Start slightly scaled down */
+            opacity: 0;
+            visibility: hidden; /* Use visibility for better transition and accessibility */
+        }
+
+        #collapsible-menu:not(.hidden) {
+            transform: scale(1);
+            opacity: 1;
+            visibility: visible;
+            transition: transform 0.3s ease, opacity 0.3s ease, visibility 0s linear 0s; /* Remove delay when showing */
+        }
+
+
+        #collapsible-menu ul {
+            list-style: none;
+            padding: 10px 0;
+            margin: 0;
+        }
+
+        #collapsible-menu li {
+            margin: 0;
+        }
+
+        #collapsible-menu li a,
+        #collapsible-menu li button {
+            display: block;
+            width: 100%;
+            padding: 12px 20px;
+            color: var(--text);
+            text-decoration: none;
+            font-size: 15px;
+            border: none;
+            background: none;
+            text-align: left;
+            cursor: pointer;
+            transition: background-color 0.2s ease, color 0.2s ease;
+            font-family: 'Roboto', sans-serif; /* Ensure font consistency */
+        }
+
+        #collapsible-menu li a:hover,
+        #collapsible-menu li button:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: var(--primary); /* Highlight with orange on hover */
+        }
+
+        /* Style menu buttons like links */
+        #collapsible-menu li button {
+            /* Override default button styles if needed */
+            border-radius: 0;
+            margin: 0;
+            box-shadow: none;
+            text-transform: none;
+            letter-spacing: normal;
+            font-weight: normal; /* Match link weight */
+        }
+        /* --- End Menu Styles --- */
+
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            max-width: 600px; /* Slightly wider for text content */
+            padding: 20px;
+        }
+
+        h1 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 32px;
+            margin-bottom: 20px;
+            text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+         /* Style for the rules page title */
+         h2 {
+            font-family: 'Orbitron', sans-serif;
+            color: var(--secondary);
+            text-align: center;
+            margin-bottom: 25px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* Standard Box Styling (Copied from index.html) */
+        .box {
+            text-align: left; /* Align text left for rules */
+            background-color: rgba(26, 26, 26, 0.85);
+            padding: 25px; /* More padding for text */
+            border-radius: 10px;
+            margin: 20px 0;
+            width: 100%;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            line-height: 1.6; /* Better readability for paragraphs */
+        }
+
+        .box h3 {
+            font-family: 'Orbitron', sans-serif;
+            color: var(--primary);
+            margin-top: 20px;
+            margin-bottom: 10px;
+            border-bottom: 1px solid rgba(255, 102, 0, 0.3);
+            padding-bottom: 5px;
+        }
+         .box h3:first-child {
+             margin-top: 0;
+         }
+
+        .box p {
+            margin-bottom: 15px;
+            font-weight: 300;
+        }
+
+        .box ul {
+            list-style: disc;
+            margin-left: 25px;
+            margin-bottom: 15px;
+        }
+         .box li {
+             margin-bottom: 8px;
+             font-weight: 300;
+         }
+
+        .box strong {
+             font-weight: bold;
+             color: var(--secondary); /* Highlight key terms */
+         }
+         .box .highlight-orange {
+             font-weight: bold;
+             color: var(--primary);
+         }
+
+         /* Utility */
+        .hidden { display: none !important; }
+    </style>
+    <!-- Favicon links (Copied from index.html) -->
+    <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="./favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="./favicon-16x16.png">
+    <link rel="manifest" href="./site.webmanifest">
+</head>
+<body>
+
+    <!-- START Menu (Copied from index.html) -->
+    <button id="menu-toggle-btn" aria-label="Toggle Menu" aria-expanded="false" aria-controls="collapsible-menu">
+        <span></span>
+        <span></span>
+        <span></span>
+    </button>
+    <nav id="collapsible-menu" class="collapsible-menu hidden">
+        <ul>
+            <li><a href="qr_scanner.html" target="_blank">QR Code Scanner</a></li>
+            <li><a href="spelregels.html" target="_self">Spelregels</a></li> <!-- Link to self -->
+            <li id="menu-login-item" class="hidden"><button id="menu-login-btn">Login met Spotify</button></li>
+            <li id="menu-logout-item" class="hidden"><button id="menu-logout-btn">Logout</button></li>
+        </ul>
+    </nav>
+    <!-- END Menu -->
+
+    <div class="container">
+        <h1>HARDSTER</h1>
+        <h2>Spelregels</h2>
+
+        <div class="box">
+            <h3>Doel van het Spel</h3>
+            <p>Raad zo snel mogelijk de <strong>artiest en/of titel</strong> van het nummer dat wordt afgespeeld. De eerste speler die <strong class="highlight-orange">40 punten</strong> bereikt, wint het spel!</p>
+
+            <h3>Voorbereiding</h3>
+            <ol style="list-style: decimal; margin-left: 25px; margin-bottom: 15px;">
+                <li style="margin-bottom: 8px;">De spelleider verbindt de website met zijn/haar <strong>Spotify (Premium)</strong> account via de knop in het menu.</li>
+                <li style="margin-bottom: 8px;">Kies een <strong>actief Spotify afspeelapparaat</strong> (bijv. speaker, laptop, telefoon) waarop de muziek moet spelen.</li>
+                <li style="margin-bottom: 8px;">Voeg <strong>alle spelers</strong> toe met hun namen.</li>
+                <li style="margin-bottom: 8px;">Plak de <strong>URL of ID</strong> van een Spotify playlist in het invoerveld.</li>
+                <li style="margin-bottom: 8px;">Druk op <strong class="highlight-orange">"Start Spel"</strong>.</li>
+            </ol>
+
+            <h3>Spelverloop</h3>
+            <p>De muziek begint te spelen (een willekeurig nummer uit de gekozen playlist).</p>
+            <ul>
+                <li>Spelers proberen zo snel mogelijk de <strong>artiest en/of titel</strong> te raden.</li>
+                <li>Zodra iemand (of de groep) denkt het te weten, of als er genoeg tijd is verstreken, klikt de spelleider op <strong class="highlight-orange">"Bekijk Nummer"</strong>.</li>
+                <li>De muziek pauzeert (of gaat zachtjes door, afhankelijk van Spotify's gedrag) en de <strong>details van het nummer</strong> (hoes, artiest, titel, releasejaar) worden getoond.</li>
+                <li>De <strong>scorelijst</strong> verschijnt.</li>
+                <li>De spelleider kent punten toe aan de spelers die het (correct) geraden hebben.
+                    <ul>
+                        <li>Per nummer kunnen er maximaal <strong>3 punten per speler</strong> worden gegeven.</li>
+                        <li>De spelleider gebruikt de <strong>'+'</strong> en <strong>'-'</strong> knoppen om de score aan te passen.</li>
+                        <li>Spreek van tevoren af hoe punten worden verdeeld (bijv. 3 voor de eerste, 1 voor anderen, of iedereen die het weet krijgt 1 punt, etc.).</li>
+                    </ul>
+                </li>
+                 <li>Nadat de punten zijn verdeeld, klikt de spelleider op <strong class="highlight-orange">"Volgende Nummer"</strong> om door te gaan.</li>
+            </ul>
+
+            <h3>Speciale Regel: Shotjes! 🍻</h3>
+            <ul>
+                <li>Als na het onthullen van het nummer blijkt dat de <strong>titel</strong> een "drank-gerelateerd" woord bevat (zoals bier, shotje, wodka, drink, drunk, etc.), wordt er een <strong>willekeurige speler</strong> gekozen die een shotje moet nemen!</li>
+                <li>De naam van de ongelukkige wordt bovenaan het scherm getoond.</li>
+            </ul>
+
+
+            <h3>Einde van het Spel</h3>
+            <ul>
+                <li>Het spel eindigt zodra een speler <strong class="highlight-orange">40 punten of meer</strong> behaalt.</li>
+                <li>De winnaar wordt bekendgemaakt.</li>
+                <li>De winnaar mag, afhankelijk van het aantal spelers, <strong>shotjes uitdelen</strong> aan andere spelers:
+                    <ul>
+                        <li>Bij 2-4 spelers: <strong>1 shotje</strong> uitdelen.</li>
+                        <li>Bij 5+ spelers: <strong>2 shotjes</strong> uitdelen.</li>
+                    </ul>
+                </li>
+                 <li>Een speciaal overwinningsnummer wordt (mogelijk) afgespeeld via Spotify.</li>
+                 <li>Klik op <strong class="highlight-orange">"Nieuw Spel"</strong> om de scores te resetten en opnieuw te beginnen met dezelfde spelers en playlist, of ga terug naar de setup.</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Minimal JavaScript for Menu functionality -->
+    <script>
+        // Constants (Only those needed for auth/menu)
+        const CLIENT_ID = '412e65076c5b43bdb49fd5ed6a734e17'; // Same as index.html
+        const REDIRECT_URI = window.location.origin + window.location.pathname.replace('spelregels.html', 'index.html'); // Redirect back to index after login
+
+        // DOM elements (Only for menu)
+        const el = {
+            menuToggleBtn: document.getElementById('menu-toggle-btn'),
+            collapsibleMenu: document.getElementById('collapsible-menu'),
+            menuLoginItem: document.getElementById('menu-login-item'),
+            menuLogoutItem: document.getElementById('menu-logout-item'),
+            menuLoginBtn: document.getElementById('menu-login-btn'),
+            menuLogoutBtn: document.getElementById('menu-logout-btn'),
+        };
+
+        // State (Only for auth status)
+        let accessToken = null; // We might get this from index.html's redirect context
+
+        // --- Helper Functions ---
+        function toggleVisibility(element, show) {
+            if (!element) return;
+            element.classList.toggle('hidden', !show);
+        }
+
+        // --- Authentication and Menu Functions ---
+        function checkAuth() {
+            // Simple check: In a real scenario, you might use localStorage or sessionStorage
+            // to know if the user was logged in on the main page. For this static page,
+            // we'll just assume logged out unless a token fragment is somehow present (unlikely).
+            // This primarily just sets the initial button visibility.
+            const hashParams = new URLSearchParams(window.location.hash.substring(1));
+            const token = hashParams.get('access_token'); // Check if redirected here WITH token
+             history.replaceState(null, null, window.location.pathname + window.location.search); // Clean URL
+
+             if (token) {
+                accessToken = token; // Store if found (e.g., if login redirected here mistakenly)
+             } else {
+                accessToken = null; // Assume logged out otherwise
+             }
+             updateMenuButtons();
+             return !!accessToken; // Return login status
+        }
+
+        function login() {
+             const scopes = 'user-read-private user-read-email streaming user-modify-playback-state user-read-playback-state'; // Same scopes
+             // Redirect to Spotify, then BACK TO INDEX.HTML
+             const authUrl = 'https://accounts.spotify.com/authorize' +
+                 '?response_type=token' +
+                 '&client_id=' + encodeURIComponent(CLIENT_ID) +
+                 '&scope=' + encodeURIComponent(scopes) +
+                 '&redirect_uri=' + encodeURIComponent(REDIRECT_URI) + // Use the index.html redirect URI
+                 '&show_dialog=true';
+             window.location.href = authUrl;
+        }
+
+        function logout() {
+            // On a static page, logout mainly means visually updating the menu.
+            // If state was shared via localStorage/sessionStorage, clear it here.
+            accessToken = null;
+            console.log("User logged out (visual state updated).");
+            updateMenuButtons();
+        }
+
+        function updateMenuButtons() {
+            toggleVisibility(el.menuLoginItem, !accessToken);
+            toggleVisibility(el.menuLogoutItem, !!accessToken);
+        }
+
+        // --- Menu Toggle ---
+        function toggleMenu() {
+            if (!el.menuToggleBtn || !el.collapsibleMenu) return;
+            const isExpanded = el.menuToggleBtn.getAttribute('aria-expanded') === 'true';
+            el.menuToggleBtn.setAttribute('aria-expanded', !isExpanded);
+            el.collapsibleMenu.classList.toggle('hidden');
+        }
+
+        // Close menu if clicking outside
+        document.addEventListener('click', function(event) {
+            if (!el.collapsibleMenu || !el.menuToggleBtn) return; // Ensure elements exist
+            const isClickInsideMenu = el.collapsibleMenu.contains(event.target);
+            const isClickOnToggle = el.menuToggleBtn.contains(event.target);
+            const isMenuOpen = !el.collapsibleMenu.classList.contains('hidden');
+
+            if (!isClickInsideMenu && !isClickOnToggle && isMenuOpen) {
+                toggleMenu();
+            }
+        });
+
+        // --- Initialization ---
+        function attachListeners() {
+            el.menuToggleBtn?.addEventListener('click', toggleMenu);
+            el.menuLoginBtn?.addEventListener('click', () => {
+                login(); // Attempt login
+                 if (el.collapsibleMenu && !el.collapsibleMenu.classList.contains('hidden')) toggleMenu(); // Close menu
+            });
+            el.menuLogoutBtn?.addEventListener('click', () => {
+                logout(); // Update visual state
+                 if (el.collapsibleMenu && !el.collapsibleMenu.classList.contains('hidden')) toggleMenu(); // Close menu
+            });
+            console.log("Spelregels page listeners attached.");
+        }
+
+        window.addEventListener('load', () => {
+             console.log("Spelregels page loaded.");
+             attachListeners();
+             checkAuth(); // Set initial menu button state
+        });
+
+    </script>
+</body>
+</html>
