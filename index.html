@@ -2,792 +2,1894 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <!-- *** ADDED VIEWPORT META TAG FOR MOBILE RESPONSIVENESS *** -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hardster Scoreboard</title>
+    <title>Hardster</title> {/* Added a title */}
     <style>
-        /* Basic styles for TV display - customize as needed */
-        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Roboto:wght@300;400&display=swap');
+        /* --- STYLES ARE UNCHANGED --- */
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Roboto:wght@300;400;700&display=swap');
 
         :root {
             --primary: #ff6600; /* Orange */
             --secondary: #00ccff; /* Cyan */
             --bg-dark: #0a0a0a;
-            --bg-light: #1a1a1a; /* Used for inputs */
+            --bg-light: #1a1a1a;
             --text: #ffffff;
             --success: #33cc33; /* Green */
             --danger: #ff3355; /* Red */
         }
 
-        html, body {
-            height: 100%;
-            margin: 0;
-            padding: 0;
-            overflow: hidden; /* Prevent scrollbars */
-        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
 
         body {
-            background-color: var(--bg-dark);
-            color: var(--text);
             font-family: 'Roboto', sans-serif;
             display: flex;
             flex-direction: column;
-            justify-content: center;
             align-items: center;
-            min-height: 100vh; /* Ensure full height */
-            text-align: center;
-            padding: 3vh 3vw; /* Use viewport units for padding */
-            box-sizing: border-box;
-            position: relative; /* Needed for absolute positioning of video */
+            justify-content: flex-start;
+            min-height: 100vh;
+            background-color: var(--bg-dark);
+            color: var(--text);
+            background-image:
+                radial-gradient(circle at 20% 30%, rgba(255, 102, 0, 0.15) 0%, transparent 40%),
+                radial-gradient(circle at 80% 70%, rgba(0, 204, 255, 0.1) 0%, transparent 40%);
+            padding-top: 80px; /* Increased padding to avoid overlap with fixed menu */
+            padding-bottom: 50px; /* Add padding at bottom */
         }
 
-        /* PIN Input Area Styles */
-        #pin-entry-area {
-            width: 90%;
-            max-width: 400px;
-            background-color: rgba(26, 26, 26, 0.9);
-            padding: 30px;
-            border-radius: 15px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            text-align: center;
-            z-index: 10; /* Ensure PIN entry is above potential video */
-            position: relative;
-            transition: opacity 0.5s ease, visibility 0s linear 0.5s; /* Fade out */
+        /* --- Collapsible Menu Styles --- */
+        #menu-toggle-btn {
+            position: fixed; /* Fixed positioning */
+            top: 15px;
+            right: 15px;
+            z-index: 1001; /* Ensure it's above the menu */
+            background: rgba(26, 26, 26, 0.8); /* Dark background */
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 5px;
+            width: 45px;
+            height: 40px;
+            cursor: pointer;
+            padding: 8px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-around;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+            /* Reset button styles */
+            margin: 0;
+            text-transform: none;
+            letter-spacing: normal;
+            overflow: visible; /* Ensure spans are visible */
+            transition: background 0.3s ease;
         }
-        #pin-entry-area.hidden {
-            opacity: 0;
-            visibility: hidden;
-            transition: opacity 0.5s ease, visibility 0s linear 0.5s;
+
+        #menu-toggle-btn:hover {
+            background: rgba(40, 40, 40, 0.9);
         }
-        #pin-entry-area label {
+
+        #menu-toggle-btn span {
             display: block;
-            color: var(--secondary);
-            font-size: 1.2em;
-            margin-bottom: 15px;
-        }
-        #pin-input {
-             background-color: var(--bg-light);
-             color: white;
-             border: 1px solid var(--secondary);
-             padding: 15px;
-             border-radius: 8px;
-             width: 100%;
-             margin-bottom: 20px;
-             font-size: 1.5em; /* Larger font for PIN */
-             text-align: center;
-             letter-spacing: 5px; /* Space out digits */
-             font-family: 'Orbitron', sans-serif; /* Match score font */
-             outline: none;
-             box-sizing: border-box;
-        }
-        /* Style for number input appearance */
-        #pin-input[type=number]::-webkit-inner-spin-button,
-        #pin-input[type=number]::-webkit-outer-spin-button {
-          -webkit-appearance: none;
-          margin: 0;
-        }
-        #pin-input[type=number] {
-          -moz-appearance: textfield; /* Firefox */
+            width: 100%;
+            height: 3px;
+            background-color: var(--secondary); /* Cyan lines */
+            border-radius: 1px;
+            transition: transform 0.3s ease, opacity 0.3s ease;
         }
 
-        #load-scoreboard-btn {
-             background: linear-gradient(135deg, var(--primary), var(--secondary));
-             color: white;
-             border: none;
-             padding: 14px 28px;
-             border-radius: 30px;
-             font-size: 1em;
-             font-weight: bold;
-             cursor: pointer;
-             transition: all 0.3s ease;
-             text-transform: uppercase;
-             letter-spacing: 1px;
-             box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-             width: 100%;
+        /* Animation for hamburger to X */
+        #menu-toggle-btn[aria-expanded="true"] span:nth-child(1) {
+            transform: translateY(8px) rotate(45deg);
         }
-        #load-scoreboard-btn:hover:not(:disabled) {
-            transform: translateY(-3px);
-            box-shadow: 0 7px 20px rgba(0, 0, 0, 0.4);
+        #menu-toggle-btn[aria-expanded="true"] span:nth-child(2) {
+            opacity: 0;
         }
-        #load-scoreboard-btn:disabled {
-             background: linear-gradient(135deg, #555, #777);
-             cursor: not-allowed; opacity: 0.6; transform: none;
-        }
-        #pin-error-message {
-            color: var(--danger);
-            margin-top: 15px;
-            font-weight: bold;
-            min-height: 1.2em; /* Reserve space */
+        #menu-toggle-btn[aria-expanded="true"] span:nth-child(3) {
+            transform: translateY(-8px) rotate(-45deg);
         }
 
 
-        /* Scoreboard Content Area Styles */
-        #scoreboard-content {
-            width: 95%;
-            max-width: 1000px;
-            background-color: rgba(26, 26, 26, 0.9);
-            padding: 3vh 3vw; /* Reduced padding slightly */
-            border-radius: 15px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
+        #collapsible-menu {
+            position: fixed; /* Fixed positioning */
+            top: 65px; /* Position below the button */
+            right: 15px;
+            z-index: 1000; /* Below toggle button, above content */
+            background-color: rgba(20, 20, 20, 0.95); /* Slightly different dark */
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 8px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+            width: 220px; /* Adjust as needed */
+            overflow: hidden; /* Clip content */
+            transition: transform 0.3s ease, opacity 0.3s ease, visibility 0s linear 0.3s; /* Delay visibility change */
+            transform-origin: top right;
+            transform: scale(0.95); /* Start slightly scaled down */
+            opacity: 0;
+            visibility: hidden; /* Use visibility for better transition and accessibility */
+        }
+
+        #collapsible-menu:not(.hidden) {
+            transform: scale(1);
+            opacity: 1;
+            visibility: visible;
+            transition: transform 0.3s ease, opacity 0.3s ease, visibility 0s linear 0s; /* Remove delay when showing */
+        }
+
+
+        #collapsible-menu ul {
+            list-style: none;
+            padding: 10px 0;
+            margin: 0;
+        }
+
+        #collapsible-menu li {
+            margin: 0;
+        }
+
+        #collapsible-menu li a,
+        #collapsible-menu li button {
+            display: block;
+            width: 100%;
+            padding: 12px 20px;
+            color: var(--text);
+            text-decoration: none;
+            font-size: 15px;
+            border: none;
+            background: none;
+            text-align: left;
+            cursor: pointer;
+            transition: background-color 0.2s ease, color 0.2s ease;
+            font-family: 'Roboto', sans-serif; /* Ensure font consistency */
+        }
+
+        #collapsible-menu li a:hover,
+        #collapsible-menu li button:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: var(--primary); /* Highlight with orange on hover */
+        }
+
+        /* Style menu buttons like links */
+        #collapsible-menu li button {
+            /* Override default button styles if needed */
+            border-radius: 0;
+            margin: 0;
+            box-shadow: none;
+            text-transform: none;
+            letter-spacing: normal;
+            font-weight: normal; /* Match link weight */
+        }
+
+        /* Hide the main large login button area */
+        #login-area {
+             display: none !important;
+        }
+        /* --- End Menu Styles --- */
+
+
+        .container {
             display: flex;
             flex-direction: column;
             align-items: center;
-            max-height: 90vh; /* Limit height */
-            z-index: 10; /* Above video by default */
-            position: relative;
-            opacity: 1;
-            visibility: visible;
-            transition: opacity 0.5s ease, visibility 0s linear 0s; /* Fade in/out */
+            width: 100%;
+            max-width: 500px;
+            padding: 20px;
         }
-        #scoreboard-content.hidden {
-            /* Instead of display: none, we use opacity/visibility for transitions */
-            opacity: 0;
-            visibility: hidden;
-            transition: opacity 0.5s ease, visibility 0s linear 0.5s;
-        }
+
         h1 {
             font-family: 'Orbitron', sans-serif;
-            color: var(--primary);
-            font-size: clamp(2.2em, 5vw, 4em); /* Adjusted font size */
-            margin-bottom: 2vh; /* Reduced margin */
+            font-size: 32px;
+            margin-bottom: 20px;
+            text-align: center;
             text-transform: uppercase;
             letter-spacing: 2px;
-             background: linear-gradient(90deg, var(--primary), var(--secondary));
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
-            width: 100%;
         }
 
-        /* Current PIN Display */
-        #current-pin-display {
-            font-size: clamp(0.8em, 1.5vw, 1em);
-            color: rgba(255, 255, 255, 0.6);
-            margin-bottom: 2vh;
-        }
-        #current-pin-display span {
-             font-weight: bold;
-             color: var(--secondary);
-             margin-left: 5px;
-        }
-
-        /* Shot Message Styling */
-        #shot-message-display {
-            background-color: rgba(255, 102, 0, 0.3);
-            color: var(--primary);
-            border: 1px solid rgba(255, 102, 0, 0.4);
-            border-radius: 8px;
-            padding: 10px 20px; /* Adjusted padding */
-            font-size: clamp(1.2em, 3vw, 2em); /* Adjusted font size */
-            font-weight: bold;
-            margin-bottom: 2vh; /* Reduced margin */
-            width: 100%;
-            box-sizing: border-box;
+        /* Standard Box Styling */
+        .box {
             text-align: center;
-        }
-
-        /* Score Columns Container */
-        #score-columns-container {
-            display: flex;
-            justify-content: space-around; /* Distribute space between columns */
+            background-color: rgba(26, 26, 26, 0.85);
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
             width: 100%;
-            gap: 3vw; /* Gap between columns */
-            margin-bottom: 3vh; /* Space below scores */
+            border: 1px solid rgba(255, 255, 255, 0.1); /* Default subtle border for all boxes */
         }
-        #score-columns-container.hidden { display: none; } /* Hide container if needed */
-
-        /* Individual Score Column */
-        .score-column {
-             width: 48%; /* Each column takes slightly less than half */
-             list-style: none;
-             padding: 0;
-             margin: 0;
+        .box label {
+             color: var(--secondary);
+             margin-bottom: 10px;
+             font-weight: bold;
+             display: block;
+             text-align: left;
         }
 
-        /* Score List Item */
-        li.player-item {
+        /* Updated #status styles */
+        #status {
+            margin: 15px 0;
+            text-align: center;
+            min-height: 40px;
+            line-height: 1.4;
+            font-weight: 300;
+            letter-spacing: 0.5px;
+            background-color: rgba(10, 10, 10, 0.7);
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.1); /* Default subtle border */
+            width: 100%;
             display: flex;
-            /* justify-content: space-between; <-- Removed, handled by inner elements */
             align-items: center;
-            font-size: clamp(1.8em, 4vw, 3em); /* <<< INCREASED FONT SIZE */
-            padding: 12px 5px; /* Adjusted padding slightly */
-            border-bottom: 1px solid rgba(255, 255, 255, 0.15);
-            color: var(--text);
+            justify-content: center;
+            transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease; /* Smooth transition for updates */
+            color: var(--text); /* Default text color */
         }
-         li.player-item:last-child {
-             border-bottom: none;
-         }
+        /* Style types for #status */
+        #status.type-info {
+            color: var(--secondary); /* Use cyan for info */
+            border-color: rgba(0, 204, 255, 0.2); /* Optional: Cyan border */
+        }
+        #status.type-success {
+            color: var(--success); /* Keep green for actual success */
+            border-color: rgba(51, 204, 51, 0.2); /* Optional: Green border */
+        }
+        #status.type-error {
+             color: var(--danger); /* Keep red for errors */
+             border-color: rgba(255, 51, 85, 0.2); /* Optional: Red border */
+        }
+        #status.type-shot { /* Renamed from shot-message for consistency */
+            background-color: rgba(255, 102, 0, 0.3); /* More prominent background */
+            color: var(--primary); /* Make text orange */
+            font-weight: bold;
+            border-color: rgba(255, 102, 0, 0.4); /* Optional: Orange border */
+        }
+        /* New style for PIN display */
+        #status.type-pin {
+            background-color: rgba(0, 204, 255, 0.15); /* Cyan background */
+            color: var(--text); /* White text */
+            border-color: rgba(0, 204, 255, 0.3); /* Cyan border */
+            font-weight: bold;
+        }
+        #status.type-pin strong {
+            font-family: 'Orbitron', sans-serif;
+            color: var(--primary); /* Orange PIN */
+            font-size: 1.1em;
+            margin-left: 8px;
+            user-select: all; /* Make PIN easily selectable */
+        }
 
-        /* Player Face in Scoreboard - Significantly larger */
-        .player-face-img {
-            width: 100px; /* <<< INCREASED SIZE */
-            height: 100px; /* <<< INCREASED SIZE */
+        button {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            border: none;
+            padding: 14px 28px;
+            border-radius: 30px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 15px;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            display: inline-block;
+            width: auto;
+        }
+        button.full-width {
+            width: 100%;
+            max-width: 350px;
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        button:hover:not(:disabled) {
+            transform: translateY(-3px);
+            box-shadow: 0 7px 20px rgba(0, 0, 0, 0.4);
+        }
+
+        button:active:not(:disabled) { transform: translateY(1px); }
+        button:disabled {
+            background: linear-gradient(135deg, #555, #777);
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            opacity: 0.6;
+        }
+
+
+        input[type="text"] {
+             background-color: var(--bg-light);
+             color: white;
+             border: 1px solid var(--secondary);
+             padding: 12px;
+             border-radius: 8px;
+             width: 100%;
+             margin-top: 8px;
+             margin-bottom: 10px;
+             font-size: 14px;
+             outline: none;
+        }
+
+        select {
+            background-color: var(--bg-light);
+            color: white;
+            border: 1px solid var(--secondary);
+            padding: 12px;
+            border-radius: 8px;
+            width: 100%;
+            margin-top: 8px;
+            font-size: 14px;
+            outline: none;
+        }
+
+        select option {
+            background-color: var(--bg-dark);
+            padding: 8px;
+        }
+
+        /* Remove specific colors from .error-message and .success-message divs */
+        .error-message { margin: 0; font-weight: bold; text-align: center; width: 100%; }
+        .success-message { margin: 0; font-weight: bold; text-align: center; width: 100%;}
+
+        /* Loading spinner */
+        .loading-spinner { display: inline-block; width: 20px; height: 20px; margin-right: 10px; border: 3px solid rgba(255,255,255,.3); border-radius: 50%; border-top-color: var(--secondary); animation: spin 1s ease-in-out infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* --- Player Setup --- */
+        #player-setup ul { list-style: none; padding: 0; margin-top: 15px; }
+        #player-setup li {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: rgba(255,255,255,0.05);
+            padding: 8px 12px;
+            border-radius: 5px;
+            margin-bottom: 8px;
+            gap: 8px; /* Add gap between elements */
+        }
+        #player-setup li span { font-weight: bold; /* Removed margin-right: auto; - handled by flexbox/gap */ }
+        #player-setup .remove-player-btn { background: var(--danger); color: white; border: none; border-radius: 50%; width: 25px; height: 25px; font-size: 14px; font-weight: bold; cursor: pointer; padding: 0; margin: 0; line-height: 25px; text-align: center; flex-shrink: 0; /* Removed margin-left: 10px; - handled by gap */ }
+
+
+        /* --- Playback / Song Details --- */
+        #playback-controls { margin: 20px 0; width: 100%; text-align: center; }
+        .playback-button { width: 80px; height: 80px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; background: linear-gradient(135deg, var(--primary), var(--secondary)); border: none; cursor: pointer; box-shadow: 0 0 15px rgba(0, 204, 255, 0.4); transition: all 0.3s ease; margin: 0 10px; vertical-align: middle; }
+        .playback-button:hover:not(:disabled) { transform: scale(1.05); box-shadow: 0 0 20px rgba(0, 204, 255, 0.6); }
+        .playback-button:active:not(:disabled) { transform: scale(0.95); }
+        .playback-button svg { width: 30px; height: 30px; fill: white; }
+        .playback-button:focus { outline: none; }
+        .playback-button:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+        .playback-button { -webkit-tap-highlight-color: transparent; user-select: none; }
+
+        #song-details {
+             /* inherits border: 1px solid rgba(255, 255, 255, 0.1); from .box */
+             /* Orange border and glow removed */
+         }
+        #song-details img#song-cover { max-width: 150px; height: auto; border-radius: 5px; margin-bottom: 15px; box-shadow: 0 4px 8px rgba(0,0,0,0.3); display: block; margin-left: auto; margin-right: auto; }
+        #song-details p { margin-bottom: 8px; font-size: 14px; line-height: 1.4; text-align: center; }
+        #song-details p strong { color: var(--secondary); }
+
+        /* --- Score Board --- */
+        #score-board {
+             /* inherits border: 1px solid rgba(255, 255, 255, 0.1); from .box */
+         }
+        #score-board h3 { font-family: 'Orbitron', sans-serif; margin-bottom: 15px; color: var(--secondary); text-transform: uppercase; letter-spacing: 1px;}
+        #score-list { list-style: none; padding: 0; }
+        .player-score-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.1); }
+        .player-score-item:last-child { border-bottom: none; }
+        .player-info { flex-grow: 1; text-align: left; display: flex; align-items: center; margin-right: 10px; /* Add space before controls */ }
+        .player-name { font-weight: bold; font-size: 1.1em; color: var(--primary); margin-right: 15px; /* Space between name and score */ }
+        .player-score {
+            font-family: 'Orbitron', sans-serif; font-size: 1.2em;
+            background: rgba(0,0,0,0.2); padding: 3px 10px; /* Slightly wider padding */
+            border-radius: 4px; min-width: 40px; /* Increased min-width */
+            display: inline-block; text-align: center; /* Ensure score is centered */
+        }
+        .score-controls { flex-shrink: 0; display: flex; align-items: center; gap: 8px; /* Use gap for spacing between buttons */ }
+        .score-controls button { width: 35px; height: 35px; border-radius: 50%; padding: 0; font-size: 20px; line-height: 35px; text-align: center; margin: 0; /* Remove default margins */ }
+        .score-controls .decrement { background: linear-gradient(135deg, #cc0000, var(--danger)); }
+        .score-controls .increment { background: linear-gradient(135deg, #009900, var(--success)); }
+
+        /* --- Action Buttons / Game Over --- */
+        #action-buttons button { width: 80%; max-width: 300px; }
+        #game-over { border: 2px solid var(--success); box-shadow: 0 0 20px rgba(51, 204, 51, 0.5); text-align: center; }
+        #game-over h2 { font-family: 'Orbitron', sans-serif; color: var(--success); margin-bottom: 15px; }
+        #game-over p { font-size: 1.1em; margin-bottom: 10px; }
+        #game-over #reward-message { /* Specific style for reward message */
+            font-weight: bold;
+            color: var(--text); /* White reward text */
+        }
+
+
+        /* --- Player Face Image Styles --- */
+        #player-setup .player-face-control,
+        #score-list .player-face-display { /* Keep existing styles for consistency */
+            width: 30px;
+            height: 30px;
             border-radius: 50%;
-            margin-right: 20px; /* <<< INCREASED SPACE */
             flex-shrink: 0;
-            background-color: var(--bg-light); /* Placeholder bg */
-            border: 3px solid var(--secondary); /* <<< INCREASED BORDER */
+            display: inline-block;
+            vertical-align: middle;
+            background-color: var(--bg-light);
+            border: 1px solid var(--secondary);
             background-size: cover;
             background-position: center;
-            display: inline-block;
-             /* Default Icon */
-             background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23cccccc"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>');
-             background-repeat: no-repeat;
-             background-size: 70%; /* Adjusted SVG icon size */
-             object-fit: cover; /* Ensure loaded images cover the area */
-        }
-
-        .player-info-wrapper {
-             display: flex;
-             align-items: center;
-             flex-grow: 1; /* Takes up space pushing score to the right */
-             overflow: hidden; /* Prevents long names from breaking layout */
-             min-width: 0; /* Important for flex item overflow */
-        }
-
-        .player-name {
-            color: var(--secondary);
-            text-align: left;
-            margin-right: 20px; /* <<< INCREASED SPACE */
-            font-weight: 400;
-            white-space: nowrap;
+            cursor: pointer;
+            position: relative;
             overflow: hidden;
-            text-overflow: ellipsis;
-            flex-shrink: 1; /* Allow name to shrink if needed */
-        }
-        .player-score {
-            font-family: 'Orbitron', sans-serif;
-            font-weight: 700;
-            min-width: 80px; /* <<< INCREASED MIN-WIDTH */
-            text-align: right;
-            color: var(--primary);
-            flex-shrink: 0; /* Prevent score from shrinking */
         }
 
-        /* Winner Display - Adjusted for 16:9 */
-        #winner-display {
-            font-family: 'Orbitron', sans-serif;
-            font-size: clamp(2.5em, 6vw, 4.5em); /* <<< INCREASED FONT */
-            color: var(--success);
-            margin-top: 4vh; /* Adjusted margin */
-            font-weight: bold;
-            line-height: 1.3;
-            width: 100%;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 2vh; /* Adjusted gap */
-        }
-        #winner-display.hidden { display: none; }
-
-        /* Winner Face Image - Larger */
-        #winner-face-img {
-             width: clamp(150px, 25vw, 250px); /* <<< INCREASED SIZE */
-             height: clamp(150px, 25vw, 250px); /* <<< INCREASED SIZE */
-             border-radius: 50%;
-             border: 5px solid var(--success); /* <<< INCREASED BORDER */
-             background-color: var(--bg-light); /* Placeholder */
-             background-size: cover;
-             background-position: center;
-             /* Default Icon (Optional, if no image loads) */
-             background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23cccccc"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>');
-             background-repeat: no-repeat;
-             background-size: 70%; /* Adjusted SVG size */
-             object-fit: cover; /* Ensure loaded image covers */
-        }
-        #winner-face-img.hidden { display: none; }
-
-         #winner-text {
-             text-align: center;
-         }
-         #winner-name-text {
-              display: block;
-              margin-bottom: 5px;
-              color: var(--success); /* Ensure winner name is green */
-         }
-         #winner-reward-text {
-              font-size: 0.6em; /* Relative to winner name size */
-              font-weight: normal;
-              color: var(--text); /* White reward text */
-              display: block;
-         }
-
-        #status-message {
-            font-size: clamp(1.2em, 2.5vw, 1.8em); /* Adjusted font size */
+        #player-setup .player-face-control::after { /* Simple upload icon (changed from camera) */
+            content: '📁'; /* File folder icon */
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 16px;
             color: rgba(255, 255, 255, 0.7);
-            width: 100%;
-            text-align: center;
-            padding: 20px 0;
-            /* Displayed within the main content area */
-            margin-top: 2vh;
+            opacity: 0.7; /* Show icon initially */
+            transition: opacity 0.2s ease;
+            pointer-events: none; /* Icon shouldn't block clicks */
         }
-        #status-message.hidden { display: none; }
+        #player-setup .player-face-control:not([disabled]):hover::after {
+            opacity: 1;
+        }
+        /* Hide icon if image is loaded */
+        #player-setup .player-face-control[style*="background-image"]::after {
+            opacity: 0;
+        }
+        /* Style disabled face control */
+        #player-setup .player-face-control[disabled] {
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+        #player-setup .player-face-control[disabled]::after {
+             display: none; /* Hide icon when disabled */
+        }
 
-        /* ++ VIDEO STYLES ++ */
-        #video-container {
+
+        #score-list .player-face-display { /* Updated default icon for scoreboard */
+            cursor: default; /* Not clickable */
+             /* Default user icon using SVG */
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23cccccc"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>');
+            background-repeat: no-repeat;
+            background-size: 80%;
+             margin-right: 10px; /* Add margin to separate from name */
+        }
+
+
+        /* --- Camera Capture Button (NEW) --- */
+        .capture-photo-btn {
+            background: none;
+            border: 1px solid var(--secondary);
+            color: var(--secondary);
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            font-size: 16px;
+            cursor: pointer;
+            padding: 0;
+            margin: 0;
+            line-height: 30px; /* Center icon vertically */
+            text-align: center;
+            flex-shrink: 0;
+            transition: background-color 0.2s ease, color 0.2s ease;
+            display: inline-flex; /* Use flex to center SVG */
+            align-items: center;
+            justify-content: center;
+        }
+        .capture-photo-btn svg {
+            width: 18px;
+            height: 18px;
+            fill: var(--secondary);
+            transition: fill 0.2s ease;
+        }
+        .capture-photo-btn:hover:not(:disabled) {
+            background-color: rgba(0, 204, 255, 0.2);
+            color: white;
+        }
+        .capture-photo-btn:hover:not(:disabled) svg {
+            fill: white;
+        }
+        .capture-photo-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            border-color: #555;
+        }
+        .capture-photo-btn:disabled svg {
+             fill: #555;
+        }
+
+        /* Ensure player name takes remaining space */
+        #player-setup li span.player-list-name {
+             flex-grow: 1; /* Allow name to take available space */
+             overflow: hidden;
+             text-overflow: ellipsis;
+             white-space: nowrap;
+             margin-left: 5px; /* Small space after face controls */
+             margin-right: 10px; /* Space between name and remove button */
+        }
+         /* Scoreboard player info adjustment */
+         #score-list .player-info {
+            display: flex;
+            align-items: center;
+            flex-grow: 1;
+            margin-right: 10px;
+         }
+         #score-list .player-name { /* Adjust margin if needed */
+             margin-right: 15px;
+         }
+
+        /* --- End Player Face Styles --- */
+
+         /* --- Photo Capture Modal Styles (NEW) --- */
+        #capture-modal {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background-color: rgba(0, 0, 0, 0.95); /* Darker overlay */
+            background-color: rgba(10, 10, 10, 0.9);
+            z-index: 1010; /* Above menu */
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
-            z-index: 5; /* Below scoreboard content by default */
-            opacity: 0;
-            visibility: hidden;
-            transition: opacity 0.6s ease-in-out, visibility 0s linear 0.6s;
+            padding: 20px;
+            box-sizing: border-box;
         }
-        #video-container.visible {
-            opacity: 1;
-            visibility: visible;
-            transition: opacity 0.6s ease-in-out, visibility 0s linear 0s;
-            z-index: 50; /* Bring video above scoreboard when visible */
+        #capture-modal p {
+            color: var(--secondary);
+            margin-bottom: 15px;
+            font-size: 1.1em;
         }
-        #youtube-player {
-            width: 80vw; /* Adjust size as needed */
-            height: 45vw; /* Maintain 16:9 aspect ratio */
-            max-width: 1280px;
-            max-height: 720px;
+        #capture-video {
+            max-width: 90%;
+            max-height: 60vh; /* Limit height */
+            width: auto; /* Maintain aspect ratio */
+            height: auto; /* Maintain aspect ratio */
+            border-radius: 8px;
             border: 2px solid var(--secondary);
-            box-shadow: 0 0 30px rgba(0, 204, 255, 0.5);
+            background-color: #000; /* Black bg while loading */
+            margin-bottom: 20px;
+            transform: scaleX(-1); /* Mirror front camera */
         }
-        /* ++ END VIDEO STYLES ++ */
+        /* Hidden canvas for processing */
+        #capture-canvas { display: none; }
 
-        /* Generic hidden utility class */
-        .hidden {
-            display: none !important;
+        #capture-controls {
+            display: flex;
+            gap: 20px;
         }
-        /* Override for elements controlled by opacity/visibility */
-        #scoreboard-content.hidden,
-        #pin-entry-area.hidden {
-            display: flex !important; /* Keep in layout for opacity transition */
-            opacity: 0 !important;
-            visibility: hidden !important;
+        /* Use existing button styles but maybe smaller? */
+        #capture-modal button {
+            padding: 12px 25px;
+            font-size: 15px;
+            margin-top: 0; /* Override default margin */
         }
-        #video-container.visible {
-             display: flex !important; /* Ensure it shows when visible class is added */
+        #cancel-capture-btn {
+             background: linear-gradient(135deg, #555, #777); /* Greyish */
+        }
+        #cancel-capture-btn:hover {
+            background: linear-gradient(135deg, #666, #888);
         }
 
+        /* --- End Photo Capture Styles --- */
+
+        /* Utility */
+        .hidden { display: none !important; }
 
     </style>
+    <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="./favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="./favicon-16x16.png">
+    <link rel="manifest" href="./site.webmanifest">
 </head>
 <body>
 
-    <!-- PIN Entry Area (Shown Initially) -->
-    <div id="pin-entry-area">
-        <label for="pin-input">Enter Game PIN:</label>
-        <input type="number" id="pin-input" pattern="\d{4}" title="4-digit PIN" maxlength="4" inputmode="numeric">
-        <button id="load-scoreboard-btn">Load Scoreboard</button>
-        <div id="pin-error-message"></div>
-    </div>
+    <!-- START Menu -->
+    <button id="menu-toggle-btn" aria-label="Toggle Menu" aria-expanded="false" aria-controls="collapsible-menu">
+        <span></span>
+        <span></span>
+        <span></span>
+    </button>
+    <nav id="collapsible-menu" class="collapsible-menu hidden">
+        <ul>
+            <li><a href="qr_scanner.html" target="_blank">QR Code Scanner</a></li>
+            <li><a href="spelregels.html" target="_blank">Spelregels</a></li>
+            <li><a href="scoreboard.html" target="_blank">Open Scoreboard</a></li> <!-- Link to scoreboard -->
+            <li id="menu-quit-item" class="hidden"><button id="menu-quit-btn">Stop Spel</button></li>
+            <li id="menu-login-item" class="hidden"><button id="menu-login-btn">Login met Spotify</button></li>
+            <li id="menu-logout-item" class="hidden"><button id="menu-logout-btn">Logout</button></li>
+        </ul>
+    </nav>
+    <!-- END Menu -->
 
-    <!-- Scoreboard Content Area (Hidden Initially) -->
-    <div id="scoreboard-content" class="hidden"> <!-- Start hidden -->
-        <h1>Hardster Scores</h1>
-        <div id="current-pin-display" class="hidden">Viewing PIN: <span id="viewing-pin"></span></div>
+    <div class="container">
+        <h1>HARDSTER</h1>
 
-        <!-- Shot Message Area -->
-        <div id="shot-message-display" class="hidden"></div>
+        <div id="status">Verbind met Spotify om door te gaan</div>
 
-        <!-- Score Columns Container -->
-        <div id="score-columns-container" class="hidden"> <!-- Start hidden -->
-            <ul id="score-column-1" class="score-column">
-                <!-- Player items added dynamically -->
-            </ul>
-            <ul id="score-column-2" class="score-column">
-                <!-- Player items added dynamically -->
-            </ul>
+        <!-- Hidden file input for image uploads -->
+        <input type="file" id="image-upload-input" accept="image/*" class="hidden">
+
+        <!-- Login Area (Hidden) -->
+        <div id="login-area">
+            <button id="login-btn" class="full-width">Verbind met Spotify</button>
         </div>
 
-         <!-- Status message -->
-         <div id="status-message" class="hidden">Connecting...</div>
+        <!-- Device Selector -->
+        <div id="device-selector" class="box hidden">
+            <label for="device-list">1. KIES AFSPEEL APPARAAT:</label>
+            <select id="device-list"></select>
+            <button id="refresh-devices-btn" style="margin-top: 10px;">Ververs Apparaten</button>
+        </div>
 
+        <!-- Player Setup -->
+        <div id="player-setup" class="box hidden">
+            <label for="player-name-input">2. VOEG SPELERS TOE:</label>
+            <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                <input type="text" id="player-name-input" placeholder="Naam speler">
+                <button id="add-player-btn" style="margin-top: 8px; padding: 12px 15px; flex-shrink: 0;">+</button>
+            </div>
+            <ul id="player-list"></ul>
+        </div>
 
-        <!-- Winner Display Area -->
-        <div id="winner-display" class="hidden"> <!-- Start hidden -->
-            <img id="winner-face-img" src="" alt="Winner Face" class="hidden"> <!-- Use <img> tag -->
-            <div id="winner-text">
-                 <span id="winner-name-text"></span>
-                 <span id="winner-reward-text"></span>
+        <!-- Playlist Input & Start Game -->
+        <div id="playlist-input-area" class="box hidden">
+            <label for="playlist-input">3. SPOTIFY PLAYLIST URL of ID:</label>
+            <input type="text" id="playlist-input" placeholder="Plak hier je playlist link of ID">
+            <button id="start-game-btn" class="full-width" disabled>Start Spel</button>
+        </div>
+
+        <!-- Gameplay Area -->
+        <div id="gameplay-area" class="hidden">
+            <div id="playback-controls">
+                 <button id="play-pause-btn" class="playback-button">
+                    <svg id="play-icon" viewBox="0 0 24 24" class="hidden"><path d="M8 5v14l11-7z"></path></svg>
+                    <svg id="pause-icon" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"></path></svg>
+                </button>
+            </div>
+            <div id="song-details" class="box hidden">
+                <img id="song-cover" src="" alt="Album Cover">
+                <p><strong>Artiest:</strong> <span id="song-artist"></span></p>
+                <p><strong>Titel:</strong> <span id="song-title"></span></p>
+                <p><strong>Release:</strong> <span id="song-release"></span></p>
+            </div>
+            <div id="score-board" class="box hidden">
+                <h3>Scores (<span id="points-given-counter">0</span> gegeven)</h3>
+                <ul id="score-list"></ul>
+            </div>
+            <div id="action-buttons" style="margin-top: 20px; width: 100%; text-align: center;">
+                 <button id="reveal-btn" class="full-width">Bekijk Nummer</button>
+                 <button id="next-btn" class="full-width hidden">Volgende Nummer</button>
             </div>
         </div>
-    </div>
 
-    <!-- ++ VIDEO CONTAINER ++ -->
-    <div id="video-container"> <!-- Starts hidden via CSS (opacity/visibility) -->
-        <div id="youtube-player"></div>
-    </div>
-    <!-- ++ END VIDEO CONTAINER ++ -->
+        <!-- Game Over Screen -->
+        <div id="game-over" class="box hidden">
+            <h2>Spel voorbij!</h2>
+            <img id="winner-face" src="" alt="Winner Face" style="width: 100px; height: 100px; border-radius: 50%; margin: 15px auto; display: none; border: 3px solid var(--success); object-fit: cover;">
+            <p><strong id="winner-name"></strong> heeft gewonnen!</p>
+            <p id="reward-message"></p>
+            <button id="new-game-btn" class="full-width">Nieuw Spel</button>
+        </div>
 
+    </div> <!-- Closing .container -->
+
+    <!-- Photo Capture Modal -->
+    <div id="capture-modal" class="hidden">
+        <p id="capture-status">Camera laden...</p>
+        <video id="capture-video" playsinline autoplay muted></video>
+        <canvas id="capture-canvas"></canvas> <!-- Hidden canvas -->
+        <div id="capture-controls" class="hidden">
+            <button id="snap-photo-btn">Neem Foto</button>
+            <button id="cancel-capture-btn">Annuleer</button>
+        </div>
+    </div>
 
     <!-- Firebase SDKs (v8) -->
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 
-    <!-- ++ YOUTUBE API ++ -->
-    <script src="https://www.youtube.com/iframe_api"></script>
-
     <script>
-        // --- Firebase Configuration ---
-        const firebaseConfig = {
-          apiKey: "AIzaSyD0nnCDuG_4ymWoWk5AKYaXwnl4nWkVi9s", // YOUR CONFIG
-          authDomain: "hardster-7e2c5.firebaseapp.com",
-          databaseURL: "https://hardster-7e2c5-default-rtdb.europe-west1.firebasedatabase.app",
-          projectId: "hardster-7e2c5",
-          storageBucket: "hardster-7e2c5.appspot.com",
-          messagingSenderId: "667886748380",
-          appId: "1:667886748380:web:38b2c60e14158d16ae2a19",
+        // Constants
+        const CLIENT_ID = '412e65076c5b43bdb49fd5ed6a734e17';
+        const REDIRECT_URI = window.location.origin + window.location.pathname;
+        const MAX_POINTS_PER_TURN = 3;
+        const WIN_SCORE = 40;
+        const WINNER_SONG_URI = 'spotify:track:7nYs1auxxJP7jQmJripaBS';
+        const TOKEN_STORAGE_KEY = 'spotifyAccessToken';
+        const GAME_STATE_KEY = 'hardsterGameState';
+        const FIREBASE_ROOT_PATH = 'hardster/games'; // New root path for games
+        const drinkingWords = [
+            'beer', 'bier', 'wodka', 'tequila', 'shotje', 'shot',
+            'adje', 'atje', 'zuipen', 'alcohol', 'wine', 'whiskey', 'rum', 'gin',
+            'drink', 'drunk', 'tipsy', 'borrel', 'jägermeister', 'jagemeister', 'shotjee', 'champagne'
+        ];
+        // ** IMPORTANT: YouTube Data API Key **
+        // Directly embedding API keys client-side is insecure for production. Use a backend proxy if possible.
+        const YOUTUBE_API_KEY = 'AIzaSyCHJZlv_TjxezEGe1fTQ6fmCHjVkwc01y4';
+
+
+        // DOM elements
+        const el = {
+            status: document.getElementById('status'),
+            loginBtn: document.getElementById('login-btn'),
+            loginArea: document.getElementById('login-area'),
+            devSelector: document.getElementById('device-selector'),
+            devList: document.getElementById('device-list'),
+            refreshDevBtn: document.getElementById('refresh-devices-btn'),
+            playerSetup: document.getElementById('player-setup'),
+            playerNameInput: document.getElementById('player-name-input'),
+            addPlayerBtn: document.getElementById('add-player-btn'),
+            playerList: document.getElementById('player-list'),
+            playlistInputArea: document.getElementById('playlist-input-area'),
+            playlistInput: document.getElementById('playlist-input'),
+            startGameBtn: document.getElementById('start-game-btn'),
+            gameplayArea: document.getElementById('gameplay-area'),
+            playbackControls: document.getElementById('playback-controls'),
+            playPauseBtn: document.getElementById('play-pause-btn'),
+            playIcon: document.getElementById('play-icon'),
+            pauseIcon: document.getElementById('pause-icon'),
+            actionButtons: document.getElementById('action-buttons'),
+            revealBtn: document.getElementById('reveal-btn'),
+            nextBtn: document.getElementById('next-btn'),
+            songDetails: document.getElementById('song-details'),
+            songCover: document.getElementById('song-cover'),
+            songArtist: document.getElementById('song-artist'),
+            songTitle: document.getElementById('song-title'),
+            songRelease: document.getElementById('song-release'),
+            scoreBoard: document.getElementById('score-board'),
+            scoreList: document.getElementById('score-list'),
+            pointsGivenCounter: document.getElementById('points-given-counter'),
+            gameOver: document.getElementById('game-over'),
+            winnerName: document.getElementById('winner-name'),
+            winnerFace: document.getElementById('winner-face'),
+            rewardMessage: document.getElementById('reward-message'),
+            newGameBtn: document.getElementById('new-game-btn'),
+            menuToggleBtn: document.getElementById('menu-toggle-btn'),
+            collapsibleMenu: document.getElementById('collapsible-menu'),
+            menuLoginItem: document.getElementById('menu-login-item'),
+            menuLogoutItem: document.getElementById('menu-logout-item'),
+            menuLoginBtn: document.getElementById('menu-login-btn'),
+            menuLogoutBtn: document.getElementById('menu-logout-btn'),
+            menuQuitItem: document.getElementById('menu-quit-item'),
+            menuQuitBtn: document.getElementById('menu-quit-btn'),
+            imageUploadInput: document.getElementById('image-upload-input'),
+            captureModal: document.getElementById('capture-modal'),
+            captureVideo: document.getElementById('capture-video'),
+            captureCanvas: document.getElementById('capture-canvas'),
+            captureControls: document.getElementById('capture-controls'),
+            snapPhotoBtn: document.getElementById('snap-photo-btn'),
+            cancelCaptureBtn: document.getElementById('cancel-capture-btn'),
+            captureStatus: document.getElementById('capture-status'),
         };
-        const FIREBASE_ROOT_PATH = 'hardster/games'; // Same path as index.html
-        const MAX_DISPLAY_PLAYERS = 8; // Max players to show in columns
 
-        // --- DOM Elements ---
-        const pinEntryArea = document.getElementById('pin-entry-area');
-        const pinInput = document.getElementById('pin-input');
-        const loadButton = document.getElementById('load-scoreboard-btn');
-        const pinErrorMessage = document.getElementById('pin-error-message');
-        const scoreboardContent = document.getElementById('scoreboard-content');
-        const viewingPinEl = document.getElementById('viewing-pin');
-        const currentPinDisplay = document.getElementById('current-pin-display');
-        const shotMessageEl = document.getElementById('shot-message-display');
-        const scoreColumnsContainer = document.getElementById('score-columns-container');
-        const scoreColumn1 = document.getElementById('score-column-1');
-        const scoreColumn2 = document.getElementById('score-column-2');
-        const statusMessageEl = document.getElementById('status-message');
-        const winnerDisplayEl = document.getElementById('winner-display');
-        const winnerNameTextEl = document.getElementById('winner-name-text');
-        const winnerRewardTextEl = document.getElementById('winner-reward-text');
-        const winnerFaceImgEl = document.getElementById('winner-face-img'); // Now an <img> tag
-        // ++ VIDEO ELEMENTS ++
-        const videoContainer = document.getElementById('video-container');
-        const youtubePlayerDiv = document.getElementById('youtube-player');
-        // ++ END VIDEO ELEMENTS ++
-
-        // --- State ---
-        let firebaseApp;
-        let dbRef = null;
-        let currentPIN = null;
-        let listenerAttached = false;
-        let youtubePlayer = null; // << For YouTube Player API
-        let lastReceivedVideoState = { videoId: null, show: false }; // << Track video state
+        // State variables
+        let accessToken = null;
+        let currentGamePIN = null; // <-- PIN: Preserved across games until logout
+        let currentDeviceId = null;
+        let players = []; // { id: string, name: string, score: number, pointsThisTurn: number, faceDataUrl: string|null }
+        let playlistTracks = [];
+        let currentTrack = null;
+        let currentTrackIndex = -1;
+        let isPlaying = false;
+        let detailsRevealed = false; // Indicates if the current song's details are shown (scoring phase)
+        let gameIsOver = false;
+        let gameInProgress = false;
+        let currentTargetPlayerId = null;
+        let currentStream = null;
+        let currentShotMessage = null; // For storing the shot message
+        let currentVideoIdForScoreboard = null; // << NEW: YouTube video ID for scoreboard
+        let shouldShowVideoOnScoreboard = false; // << NEW: Flag to show video
 
         // --- Firebase Initialization ---
-        try {
-            firebaseApp = firebase.initializeApp(firebaseConfig);
-            console.log("Firebase app initialized for scoreboard display.");
-        } catch (e) {
-            console.error("Firebase initialization failed:", e);
-            pinErrorMessage.textContent = 'Error connecting to Firebase service.';
-            loadButton.disabled = true;
-        }
+        let firebaseApp;
+        let dbRef = null; // Will be set dynamically based on PIN
 
-        // --- YouTube Player API ---
-        // This function gets called automatically when the API script has loaded
-        function onYouTubeIframeAPIReady() {
-            console.log("YouTube IFrame API Ready");
-            try {
-                youtubePlayer = new YT.Player('youtube-player', {
-                    height: '100%', // Let CSS control size via container
-                    width: '100%',
-                    playerVars: {
-                        'playsinline': 1, // Important for mobile iOS
-                        'autoplay': 1,    // Autoplay when loaded
-                        'controls': 0,    // Hide controls
-                        'modestbranding': 1, // Less YouTube logo
-                        'rel': 0,         // Don't show related videos
-                        'iv_load_policy': 3 // Don't show annotations
-                    },
-                    events: {
-                        'onReady': onPlayerReady,
-                        'onStateChange': onPlayerStateChange,
-                        'onError': onPlayerError
-                    }
-                });
-            } catch (e) {
-                console.error("Error creating YouTube player:", e);
-                // Handle error, maybe display a message on screen
-                statusMessageEl.textContent = "Error initializing video player.";
-                statusMessageEl.classList.remove('hidden');
-            }
-        }
-
-        function onPlayerReady(event) {
-            console.log("YouTube Player Ready");
-            // Mute the player immediately once it's ready
-            event.target.mute();
-            console.log("Player muted.");
-
-            // Check if Firebase already told us to show a video before the player was ready
-            if (lastReceivedVideoState.show && lastReceivedVideoState.videoId) {
-                 console.log("Player ready, loading video based on last received state:", lastReceivedVideoState.videoId);
-                 loadAndPlayVideo(lastReceivedVideoState.videoId);
-            }
-        }
-
-        function onPlayerStateChange(event) {
-            // YT.PlayerState: -1 (unstarted), 0 (ended), 1 (playing), 2 (paused), 3 (buffering), 5 (video cued)
-            // console.log("Player State Change:", event.data);
-             if (event.data === YT.PlayerState.PLAYING) {
-                 // Ensure it's muted when it starts playing (in case autoplay ads unmute etc.)
-                 if (youtubePlayer && typeof youtubePlayer.mute === 'function' && !youtubePlayer.isMuted()) {
-                     youtubePlayer.mute();
-                     console.log("Re-muted player on state change to PLAYING.");
-                 }
-             } else if (event.data === YT.PlayerState.ENDED) {
-                console.log("Video finished playing.");
-                // Optional: Automatically hide the video when it ends
-                // hideVideo();
-                // updateDisplay(null); // Or force a scoreboard refresh if needed
+        function initializeFirebase() {
+             if (firebaseApp) return; // Already initialized
+             try {
+                 const firebaseConfig = {
+                     apiKey: "AIzaSyD0nnCDuG_4ymWoWk5AKYaXwnl4nWkVi9s", // YOUR CONFIG
+                     authDomain: "hardster-7e2c5.firebaseapp.com",
+                     databaseURL: "https://hardster-7e2c5-default-rtdb.europe-west1.firebasedatabase.app",
+                     projectId: "hardster-7e2c5",
+                     storageBucket: "hardster-7e2c5.appspot.com",
+                     messagingSenderId: "667886748380",
+                     appId: "1:667886748380:web:38b2c60e14158d16ae2a19",
+                     // measurementId: "G-80GV9B4B09" // Optional
+                 };
+                 firebaseApp = firebase.initializeApp(firebaseConfig);
+                 console.log("Firebase app initialized.");
+             } catch (e) {
+                 console.error("Firebase initialization failed:", e);
+                 showError("Scoreboard verbinding mislukt.");
              }
         }
 
-        function onPlayerError(event) {
-            console.error("YouTube Player Error:", event.data);
-            // Handle errors, e.g., video not found, playback restrictions
-            hideVideo(); // Hide the player on error
-            statusMessageEl.textContent = `Video Error (${event.data}). Scoreboard shown.`;
-            statusMessageEl.classList.remove('hidden');
-            scoreboardContent.classList.remove('hidden'); // Ensure scoreboard is visible
-        }
-
-        function loadAndPlayVideo(videoId) {
-            if (youtubePlayer && typeof youtubePlayer.loadVideoById === 'function') {
-                console.log(`Showing video container and loading video: ${videoId}`);
-                videoContainer.classList.add('visible'); // Start fading in video overlay
-                scoreboardContent.classList.add('hidden'); // Hide scoreboard content
-                youtubePlayer.loadVideoById(videoId); // API call to load video
-                // Autoplay is set to 1 in playerVars, Muting handled in onReady/onStateChange
-            } else {
-                 console.warn("YouTube player not ready or invalid, cannot load video.");
-                 // If player isn't ready, ensure container isn't trying to show
-                 if (!videoContainer.classList.contains('visible')) {
-                     lastReceivedVideoState = { videoId: null, show: false };
-                 }
-                 // Make sure scoreboard is visible if video can't load
-                 scoreboardContent.classList.remove('hidden');
-                 videoContainer.classList.remove('visible');
+        function setFirebaseDbRef(pin) {
+            if (!firebaseApp) {
+                console.error("Firebase not initialized. Cannot set DB ref.");
+                return false;
             }
-        }
-
-        function hideVideo() {
-            if (videoContainer.classList.contains('visible')) {
-                console.log("Hiding video player.");
-                videoContainer.classList.remove('visible'); // Fade out video overlay
-                if (youtubePlayer && typeof youtubePlayer.stopVideo === 'function') {
-                    // Stop video playback after fade out starts
-                     setTimeout(() => { // Delay stop slightly to allow fade
-                        if (!videoContainer.classList.contains('visible')) { // Check if still hidden
-                            youtubePlayer.stopVideo();
-                            console.log("Video stopped.");
-                        }
-                     }, 600); // Matches CSS transition duration
+            if (!pin) {
+                console.warn("Cannot set Firebase DB ref without a PIN.");
+                dbRef = null;
+                return false;
+            }
+            try {
+                // Only create a new ref object if the path changes
+                const newPath = `${FIREBASE_ROOT_PATH}/${pin}`;
+                if (!dbRef || dbRef.toString() !== firebase.database().ref(newPath).toString()) {
+                    dbRef = firebase.database().ref(newPath);
+                    console.log(`Firebase DB ref set to: ${dbRef.toString()}`);
+                } else {
+                    // console.log(`Firebase DB ref already set to: ${dbRef.toString()}`); // Less verbose
                 }
+                return true;
+            } catch (e) {
+                 console.error("Error setting Firebase DB ref:", e);
+                 showError("Kon Firebase pad niet instellen.");
+                 dbRef = null;
+                 return false;
             }
-            lastReceivedVideoState = { videoId: null, show: false }; // Update tracked state
-        }
-        // --- END YouTube ---
-
-
-        // --- Event Listeners ---
-        loadButton.addEventListener('click', handleLoadScoreboard);
-        pinInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') { handleLoadScoreboard(); }
-            if (!/\d/.test(e.key) && e.key !== 'Backspace' && e.key !== 'Delete' && e.key !== 'ArrowLeft' && e.key !== 'ArrowRight' && e.key !== 'Tab') { e.preventDefault(); }
-        });
-        pinInput.addEventListener('input', () => {
-            pinErrorMessage.textContent = ''; // Clear error on input
-            if (pinInput.value.length > 4) { pinInput.value = pinInput.value.slice(0, 4); }
-            loadButton.disabled = pinInput.value.length !== 4;
-        });
-
-
-        // --- Functions ---
-        function handleLoadScoreboard() {
-            const enteredPin = pinInput.value.trim();
-            if (enteredPin.length !== 4 || !/^\d{4}$/.test(enteredPin)) {
-                pinErrorMessage.textContent = 'Please enter a valid 4-digit PIN.';
-                return;
-            }
-            if (!firebaseApp) { pinErrorMessage.textContent = 'Firebase connection failed. Cannot load.'; return; }
-
-            pinErrorMessage.textContent = ''; loadButton.disabled = true; loadButton.textContent = 'Loading...';
-
-            // Detach previous listener if any
-            if (dbRef && listenerAttached) { dbRef.off('value'); listenerAttached = false; console.log("Detached previous Firebase listener."); }
-
-            currentPIN = enteredPin;
-            try {
-                 dbRef = firebase.database().ref(`${FIREBASE_ROOT_PATH}/${currentPIN}`);
-                 console.log("Attempting to listen at:", dbRef.toString());
-                 listenForUpdates(); // Attach listener to the new ref
-
-                 pinEntryArea.classList.add('hidden'); // Hide PIN entry
-                 scoreboardContent.classList.remove('hidden'); // Show scoreboard area (initially empty/loading)
-                 statusMessageEl.textContent = 'Loading scores...'; statusMessageEl.classList.remove('hidden');
-                 scoreColumnsContainer.classList.add('hidden'); // Hide columns until data loads
-                 winnerDisplayEl.classList.add('hidden'); shotMessageEl.classList.add('hidden');
-                 viewingPinEl.textContent = currentPIN; currentPinDisplay.classList.remove('hidden');
-                 hideVideo(); // Ensure video is hidden when loading new PIN
-
-             } catch(e) {
-                 console.error("Error setting Firebase path or attaching listener:", e);
-                 pinErrorMessage.textContent = 'Error accessing game data. Check PIN?';
-                 loadButton.disabled = false; loadButton.textContent = 'Load Scoreboard';
-                 scoreboardContent.classList.add('hidden'); pinEntryArea.classList.remove('hidden'); // Show PIN entry again
-                 hideVideo(); // Ensure video hidden on error too
-             }
         }
 
+        // --- Firebase Update Function ---
+        function updateExternalScoreboard() {
+            if (!currentGamePIN) {
+                 console.warn("Cannot update external scoreboard: No current game PIN.");
+                 return;
+            }
+             // Ensure dbRef is set correctly, even if it existed before
+            if (!setFirebaseDbRef(currentGamePIN)) {
+                 console.error("Cannot update external scoreboard: Failed to set Firebase DB ref.");
+                 return;
+            }
 
-        function listenForUpdates() {
-            if (!dbRef) return;
-            listenerAttached = true; // Mark listener as active
+            const winner = gameIsOver ? players.find(p => p.score >= WIN_SCORE) : null;
+            const winnerFaceDataUrl = winner ? (players.find(p => p.id === winner.id)?.faceDataUrl || null) : null;
 
-            dbRef.on('value', (snapshot) => {
-                const data = snapshot.val();
-                console.log("Received update:", data); // Keep logging updates
-                updateDisplay(data); // Update display based on new data
+            // Sort players based on current score for the external scoreboard
+            const sortedPlayersForExternal = [...players].sort((a, b) => b.score - a.score);
 
-                // Reset loading button state (might have been disabled during PIN entry)
-                loadButton.textContent = 'Load Scoreboard';
-                loadButton.disabled = pinInput.value.length !== 4;
+            const scoreboardData = {
+                players: sortedPlayersForExternal.map(p => ({
+                    name: p.name,
+                    score: p.score,
+                    faceDataUrl: p.faceDataUrl || null // Include face data URL
+                })),
+                isGameOver: gameIsOver,
+                winnerName: winner ? winner.name : null,
+                winnerFaceDataUrl: winnerFaceDataUrl, // Send winner face
+                shotMessage: gameIsOver ? null : (currentShotMessage || null), // Clear shot message if game is over
+                // ++ UPDATED FOR VIDEO ++
+                currentVideoId: shouldShowVideoOnScoreboard ? (currentVideoIdForScoreboard || null) : null,
+                showVideo: shouldShowVideoOnScoreboard,
+                // ++ END VIDEO DATA ++
+                timestamp: firebase.database.ServerValue.TIMESTAMP
+            };
 
-            }, (error) => {
-                console.error("Firebase read failed:", error);
-                scoreColumn1.innerHTML = ''; scoreColumn2.innerHTML = ''; // Clear scores
-                winnerDisplayEl.classList.add('hidden'); shotMessageEl.classList.add('hidden');
-                statusMessageEl.textContent = `Error loading scores for PIN ${currentPIN}. Is the game active or PIN correct?`;
-                statusMessageEl.classList.remove('hidden');
-                scoreColumnsContainer.classList.add('hidden'); // Hide columns on error
-                scoreboardContent.classList.remove('hidden'); // Ensure scoreboard area is visible to show error
-                hideVideo(); // Hide video on error
-                listenerAttached = false; // Listener failed
+            dbRef.set(scoreboardData)
+               .catch(error => console.error("Firebase update failed:", error));
+        }
 
-                // Optionally allow user to try again or enter new PIN
-                pinEntryArea.classList.remove('hidden');
-                loadButton.disabled = false; // Re-enable button
+        // --- Helper Function: Blob to Data URL ---
+        function blobToDataURL(blob) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = (error) => reject(error);
+                reader.readAsDataURL(blob);
             });
         }
 
-        // --- Update Display Function ---
-        function updateDisplay(data) {
-            // --- Video Handling FIRST ---
-            const showVideo = data?.showVideo === true;
-            const videoId = data?.currentVideoId || null;
-            console.log(`Firebase state: Show Video = ${showVideo}, Video ID = ${videoId}`);
+        // --- IndexedDB Helper Functions (Unchanged) ---
+        const DB_NAME = 'hardsterFacesDB';
+        const STORE_NAME = 'playerFaces';
+        let db;
+        function initDB() {
+             return new Promise((resolve, reject) => {
+                if (db) { resolve(db); return; }
+                const request = indexedDB.open(DB_NAME, 1);
+                request.onerror = (event) => { console.error("IndexedDB error:", event.target.error); reject("Error opening IndexedDB."); };
+                request.onsuccess = (event) => { db = event.target.result; console.log("IndexedDB initialized successfully."); resolve(db); };
+                request.onupgradeneeded = (event) => {
+                    const tempDb = event.target.result;
+                    if (!tempDb.objectStoreNames.contains(STORE_NAME)) { tempDb.createObjectStore(STORE_NAME); console.log(`Object store "${STORE_NAME}" created.`); }
+                };
+            });
+        }
+        async function saveImageToDB(playerId, imageBlob) {
+            try {
+                const currentDb = await initDB();
+                const transaction = currentDb.transaction([STORE_NAME], 'readwrite');
+                const store = transaction.objectStore(STORE_NAME);
+                const request = store.put(imageBlob, playerId);
+                await new Promise((resolve, reject) => { request.onsuccess = resolve; request.onerror = (event) => reject(event.target.error); });
+                console.log(`Image blob saved to DB for ${playerId}`);
 
-            // Store the latest state received from Firebase
-            lastReceivedVideoState = { videoId: videoId, show: showVideo };
+                const dataUrl = await blobToDataURL(imageBlob);
+                console.log(`Generated Data URL for ${playerId} (length: ${dataUrl.length})`);
 
-            if (showVideo && videoId) {
-                 // If we should show a video:
-                 console.log("Condition met: Show video.");
-                 if (youtubePlayer) { // Only load if player is ready
-                     loadAndPlayVideo(videoId); // This handles showing container & hiding scoreboard
-                 } else {
-                     console.log("Received show video signal, but player not ready yet.");
-                     // onPlayerReady will handle loading based on lastReceivedVideoState
-                     // Make sure scoreboard is hidden while waiting for player
-                     scoreboardContent.classList.add('hidden');
-                     videoContainer.classList.remove('visible'); // Keep container hidden until player ready
-                 }
-            } else {
-                 // If we should hide the video, or no video data:
-                 console.log("Condition met: Hide video / No video data.");
-                 hideVideo(); // This handles hiding the container
+                const playerIndex = players.findIndex(p => p.id === playerId);
+                if (playerIndex > -1) {
+                    players[playerIndex].faceDataUrl = dataUrl;
+                    console.log(`Data URL stored in memory for ${players[playerIndex].name}`);
+                    saveGameState(); // Save state after updating face URL in memory
+                    updateExternalScoreboard(); // Update external board immediately with new face
+                } else { console.warn(`Player ${playerId} not found in memory to store Data URL.`); }
 
-                 // Make scoreboard visible again (will be fully visible after video fades out)
-                 scoreboardContent.classList.remove('hidden');
+            } catch (error) {
+                console.error("Error saving image blob or generating/storing data URL:", error);
+                throw new Error("Could not save image or update state.");
+            }
+        }
+        function getImageFromDB(playerId) {
+            return new Promise(async (resolve, reject) => {
+                try {
+                    const currentDb = await initDB();
+                    const transaction = currentDb.transaction([STORE_NAME], 'readonly');
+                    const store = transaction.objectStore(STORE_NAME);
+                    const request = store.get(playerId);
+                    request.onsuccess = (event) => resolve(event.target.result || null);
+                    request.onerror = (event) => { console.error("Error getting image from DB:", event.target.error); reject("Could not retrieve image."); };
+                } catch (error) { reject(error); }
+            });
+        }
+        function deleteImageFromDB(playerId) {
+             return new Promise(async (resolve, reject) => {
+                try {
+                    const currentDb = await initDB();
+                    const transaction = currentDb.transaction([STORE_NAME], 'readwrite');
+                    const store = transaction.objectStore(STORE_NAME);
+                    const request = store.delete(playerId);
+                    request.onsuccess = resolve;
+                    request.onerror = (event) => { console.error("Error deleting image from DB:", event.target.error); reject("Could not delete image."); };
+                } catch (error) { reject(error); }
+            });
+        }
+        // --- END IndexedDB ---
 
-                 // --- Now Process Scoreboard Data ---
-                 // Clear previous scoreboard state before repopulating
-                 scoreColumn1.innerHTML = ''; scoreColumn2.innerHTML = '';
-                 winnerDisplayEl.classList.add('hidden'); shotMessageEl.classList.add('hidden');
-                 statusMessageEl.classList.add('hidden'); scoreColumnsContainer.classList.add('hidden'); // Start hidden, show if players exist
+        // --- Helper Functions (Unchanged) ---
+        function showStatus(message, isLoading = false, type = 'normal') {
+             el.status.classList.remove('type-info', 'type-success', 'type-error', 'type-shot', 'type-pin');
+             if (type !== 'normal') el.status.classList.add(`type-${type}`);
+             el.status.innerHTML = isLoading ? `<span class="loading-spinner"></span> ${message}` : message;
+        }
+        function showPINStatus(pin) {
+             showStatus(`Deel deze PIN voor het scoreboard: <strong>${pin}</strong>`, false, 'pin');
+        }
+        function showError(message) { showStatus(message, false, 'error'); }
+        function showSuccess(message) { showStatus(message, false, 'success'); }
+        function showInfo(message) { showStatus(message, false, 'info'); }
+        function shuffleArray(array) {
+             for (let i = array.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [array[i], array[j]] = [array[j], array[i]]; }
+        }
+        function getPlaylistId(input) {
+             try { const urlMatch = input.match(/open\.spotify\.com\/playlist\/([a-zA-Z0-9]+)/); if (urlMatch && urlMatch[1]) return urlMatch[1]; const uriMatch = input.match(/spotify:playlist:([a-zA-Z0-9]+)/); if (uriMatch && uriMatch[1]) return uriMatch[1]; const idMatch = input.match(/^[a-zA-Z0-9]{22}$/); if (idMatch) return input; } catch (e) { console.error("Error parsing playlist input:", e); } return null;
+        }
+        function updatePlayPauseButton() {
+             toggleVisibility(el.playIcon, !isPlaying); toggleVisibility(el.pauseIcon, isPlaying); el.playPauseBtn.setAttribute('aria-label', isPlaying ? 'Pause' : 'Play');
+        }
+        function toggleVisibility(element, show) {
+             if (!element) return; element.classList.toggle('hidden', !show);
+        }
+        function generatePIN() {
+            // Simple 4-digit PIN generator
+            return Math.floor(1000 + Math.random() * 9000).toString();
+        }
+        // --- END Helper Functions ---
 
-                 if (!data) {
-                      statusMessageEl.textContent = `Waiting for game data for PIN ${currentPIN}...`;
-                      statusMessageEl.classList.remove('hidden');
-                      return; // Stop processing scoreboard content
-                 }
+        // --- YouTube Search ---
+        async function searchYouTubeVideo(artist, title) {
+            if (!YOUTUBE_API_KEY) {
+                console.warn("YouTube API Key is missing. Cannot search for videos.");
+                return null;
+            }
+            // Simple query, prioritizing official music videos
+            const query = encodeURIComponent(`${artist} ${title} official music video`);
+            const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${query}&type=video&maxResults=1&key=${YOUTUBE_API_KEY}`;
+            console.log(`Searching YouTube with query: ${artist} ${title} official music video`);
 
-                 if (data.isGameOver && data.winnerName) {
-                     winnerNameTextEl.textContent = escapeHTML(data.winnerName);
-                     winnerRewardTextEl.textContent = "mag 1 shot uitdelen!";
-                     winnerFaceImgEl.src = ''; // Clear previous src
-                     winnerFaceImgEl.style.backgroundImage = ''; // Clear default icon potentially
-                     if (data.winnerFaceDataUrl) {
-                         winnerFaceImgEl.src = data.winnerFaceDataUrl;
-                         winnerFaceImgEl.alt = `Winner: ${escapeHTML(data.winnerName)}`;
-                         winnerFaceImgEl.classList.remove('hidden');
-                     }
-                     else {
-                         // Use default icon if no face URL
-                         winnerFaceImgEl.src = ''; // Ensure src is empty
-                         winnerFaceImgEl.style.backgroundImage = `url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23cccccc"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>')`;
-                         winnerFaceImgEl.alt = 'Winner (no face)';
-                         winnerFaceImgEl.classList.remove('hidden');
-                     }
-                     winnerDisplayEl.classList.remove('hidden');
-                 } else {
-                     // Only show scores etc. if game is NOT over
-                     if (data.shotMessage) {
-                         shotMessageEl.textContent = data.shotMessage;
-                         shotMessageEl.classList.remove('hidden');
-                     }
+            try {
+                const response = await fetch(url);
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => null); // Try to get error details
+                    console.error(`YouTube API Error: ${response.status}`, errorData || response.statusText);
+                    if (response.status === 403) {
+                        showError("YouTube API key error (quota exceeded or invalid?).");
+                    } else {
+                        showError(`YouTube search failed (${response.status}).`);
+                    }
+                    return null;
+                }
+                const data = await response.json();
+                if (data.items && data.items.length > 0 && data.items[0].id?.videoId) {
+                    const videoId = data.items[0].id.videoId;
+                    console.log(`YouTube video found: ${videoId}`);
+                    return videoId;
+                } else {
+                    console.log("No relevant YouTube video found for this track.");
+                    return null;
+                }
+            } catch (error) {
+                console.error("Error fetching YouTube video:", error);
+                showError("Network error during YouTube search.");
+                return null;
+            }
+        }
+        // --- END YouTube Search ---
 
-                     if (data.players && data.players.length > 0) {
-                         scoreColumnsContainer.classList.remove('hidden'); // Show columns if players exist
-                         data.players.slice(0, MAX_DISPLAY_PLAYERS).forEach((player, index) => {
-                             const li = document.createElement('li'); li.className = 'player-item';
 
-                             const faceImg = document.createElement('img'); faceImg.className = 'player-face-img';
-                             faceImg.src = ''; // Clear previous src
-                             faceImg.style.backgroundImage = ''; // Clear default icon potentially
-                             faceImg.alt = `${escapeHTML(player.name)} face`;
-                             if (player.faceDataUrl) {
-                                 faceImg.src = player.faceDataUrl;
-                             } else {
-                                 // Use default icon if no face URL
-                                 faceImg.src = ''; // Ensure src is empty
-                                 faceImg.style.backgroundImage = `url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23cccccc"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>')`;
+        // --- Spotify API Functions (Unchanged) ---
+        async function spotifyApiCall(endpoint, method = 'GET', body = null) {
+             if (!accessToken) { console.error("Access token is missing for API call."); showError("Niet verbonden met Spotify. Log opnieuw in."); logout(); return { ok: false, error: new Error("Access token missing") }; }
+             const headers = { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' }; const options = { method, headers }; if (body) options.body = JSON.stringify(body);
+             try {
+                 const response = await fetch(`https://api.spotify.com/v1${endpoint}`, options); if (response.status === 204) return { ok: true, status: response.status, data: null };
+                 let data = null; const contentType = response.headers.get("content-type");
+                 if (contentType && contentType.indexOf("application/json") !== -1) { try { data = await response.json(); } catch (jsonError) { if (response.ok) return { ok: true, status: response.status, data: null }; console.error("API response was not valid JSON:", response.status, response.statusText); throw new Error(`API Error: ${response.status} ${response.statusText || 'Invalid JSON Response'}`); } }
+                 else if (!response.ok) { console.error("API Error Response (Non-JSON):", response.status, response.statusText); throw new Error(`API Error: ${response.status} ${response.statusText || 'Unknown Error'}`); }
+                 if (!response.ok) {
+                     console.error("Spotify API Error Response:", data); let errorMessage = data?.error?.message || `API Error: ${response.status}`;
+                     if (response.status === 401) { errorMessage = "Sessie verlopen. Log opnieuw in."; logout(); }
+                     else if (response.status === 403) errorMessage = "Actie niet toegestaan (Controleer Spotify Premium / Scope)."; else if (response.status === 404) errorMessage = "Niet gevonden (Apparaat / Playlist / Nummer?)."; else if (response.status === 429) errorMessage = "Te veel requests. Probeer het later opnieuw.";
+                     else if (data?.error?.reason === 'NO_ACTIVE_DEVICE') errorMessage = "Geen actief apparaat gevonden. Controleer Spotify."; else if (data?.error?.reason === 'PREMIUM_REQUIRED') errorMessage = "Spotify Premium is vereist voor deze actie.";
+                     throw new Error(errorMessage);
+                 } return { ok: true, status: response.status, data: data };
+             } catch (error) { console.error(`API Call Failed (${method} ${endpoint}):`, error); if (error.message !== "Sessie verlopen. Log opnieuw in.") { showError(error.message || 'Netwerkfout of onbekende API fout.'); } return { ok: false, error: error }; }
+        }
+        async function getSpotifyDevices() {
+             showStatus("Zoeken naar Spotify apparaten...", true); el.refreshDevBtn.disabled = true; const { ok, data, error } = await spotifyApiCall('/me/player/devices'); el.refreshDevBtn.disabled = false; el.devList.innerHTML = '';
+             if (ok && data?.devices?.length > 0) {
+                 let activeDeviceFound = false; const defaultOption = document.createElement('option'); defaultOption.value = ""; defaultOption.text = "-- Selecteer Apparaat --"; defaultOption.disabled = true; el.devList.appendChild(defaultOption);
+                 data.devices.forEach(device => { const option = document.createElement('option'); option.value = device.id; option.text = `${device.name} (${device.type})${device.is_active ? ' - Actief' : ''}`; if (currentDeviceId === device.id || (!currentDeviceId && device.is_active)) { option.selected = true; currentDeviceId = device.id; activeDeviceFound = true; } el.devList.appendChild(option); });
+                 if (activeDeviceFound) {
+                     if (!gameInProgress) {
+                         if (!currentGamePIN) { // Generate PIN only if not resuming/existing
+                             currentGamePIN = generatePIN();
+                             if (!setFirebaseDbRef(currentGamePIN)) {
+                                 showError("Kon Firebase niet instellen voor nieuw spel. Probeer opnieuw.");
+                                 return; // Stop if Firebase setup fails
                              }
-
-                             const nameSpan = document.createElement('span'); nameSpan.className = 'player-name'; nameSpan.textContent = escapeHTML(player.name);
-                             const scoreSpan = document.createElement('span'); scoreSpan.className = 'player-score'; scoreSpan.textContent = player.score;
-                             const infoWrapper = document.createElement('div'); infoWrapper.className = 'player-info-wrapper'; infoWrapper.appendChild(faceImg); infoWrapper.appendChild(nameSpan);
-                             li.appendChild(infoWrapper); li.appendChild(scoreSpan);
-                             if (index % 2 === 0) { scoreColumn1.appendChild(li); } else { scoreColumn2.appendChild(li); }
-                         });
-                         if (scoreColumn1.children.length === 0 && scoreColumn2.children.length === 0) {
-                             // Should not happen if data.players had length > 0, but safety check
-                             statusMessageEl.textContent = 'No players to display...'; statusMessageEl.classList.remove('hidden'); scoreColumnsContainer.classList.add('hidden');
+                             saveGameState(); // Save state including the new PIN
+                         } else {
+                             // Ensure Firebase ref is set if PIN already exists
+                             if (!setFirebaseDbRef(currentGamePIN)) {
+                                 showError("Kon Firebase niet herstellen met bestaande PIN.");
+                                 return;
+                             }
                          }
+                         showPINStatus(currentGamePIN); // Show the (new or existing) PIN
+                         toggleVisibility(el.playerSetup, true);
+                         toggleVisibility(el.playlistInputArea, true);
                      } else {
-                          // No players in the data
-                          statusMessageEl.textContent = 'Waiting for players...'; statusMessageEl.classList.remove('hidden'); scoreColumnsContainer.classList.add('hidden');
+                         // Game in progress, ensure ref is set
+                         if (!setFirebaseDbRef(currentGamePIN)) {
+                             showError("Kon Firebase niet herstellen tijdens spel.");
+                             // Consider quitting or handling error more gracefully
+                         }
+                         showInfo("Actief apparaat gevonden."); // Game in progress, no need to show PIN again
                      }
+                 } else { defaultOption.selected = true; currentDeviceId = null; showError("Geen actief apparaat gevonden. Selecteer er een."); toggleVisibility(el.playerSetup, false); toggleVisibility(el.playlistInputArea, false);
+                 showStatus("Selecteer een actief apparaat.", false, 'info'); // Clear PIN status
                  }
-            } // End else (video not showing)
+                 checkCanStartGame(); if (currentDeviceId !== null) { saveGameState(); }
+             } else { const option = document.createElement('option'); option.disabled = true; option.value = ""; option.text = 'Geen apparaten gevonden'; el.devList.appendChild(option); showError(error?.message || "Geen Spotify apparaten gevonden. Open Spotify en start iets."); toggleVisibility(el.playerSetup, false); toggleVisibility(el.playlistInputArea, false); currentDeviceId = null;
+             showStatus("Geen apparaten. Open Spotify en probeer opnieuw.", false, 'error'); checkCanStartGame(); }
+        }
+        async function fetchPlaylistTracks(playlistId, forceFetch = false) {
+             if (!forceFetch && playlistTracks && playlistTracks.length > 0 && getPlaylistId(el.playlistInput.value) === playlistId ) { console.log("Using already loaded playlist tracks."); return playlistTracks; }
+             let tracks = []; let url = `/playlists/${playlistId}/tracks?fields=items(track(id,uri,name)),next&limit=50`; showStatus("Playlist tracks ophalen...", true);
+             try {
+                 while (url) { const { ok, data, error } = await spotifyApiCall(url); if (!ok) throw error || new Error("Kon tracks niet ophalen"); if (data?.items) { const validItems = data.items.filter(item => item.track && item.track.id && item.track.uri); tracks = tracks.concat(validItems.map(item => ({ id: item.track.id, uri: item.track.uri, name: item.track.name }))); console.log(`Fetched ${validItems.length} tracks... Total now: ${tracks.length}`); } url = data.next ? data.next.replace('https://api.spotify.com/v1', '') : null; }
+                 if (tracks.length === 0) showError("Playlist is leeg of bevat geen geldige nummers."); else console.log(`Finished fetching playlist. Total tracks: ${tracks.length}`);
+                 playlistTracks = tracks; return tracks;
+             } catch (err) { showError(`Fout bij laden playlist: ${err.message}`); playlistTracks = []; return []; } finally { if(currentGamePIN && !gameInProgress && !gameIsOver && !currentShotMessage && !shouldShowVideoOnScoreboard) showPINStatus(currentGamePIN); checkCanStartGame(); } // Show PIN again after loading if relevant
+         }
+        async function playTrack(trackUri) {
+             if (gameIsOver) return false; if (!currentDeviceId) { showError("Geen afspeelapparaat geselecteerd."); await getSpotifyDevices(); return false; } showStatus("Nummer starten...", true);
+             await spotifyApiCall('/me/player', 'PUT', { device_ids: [currentDeviceId], play: false }).catch(e => { console.warn(`Pre-transfer/activate failed (continuing anyway): ${e.message}`); }); await new Promise(resolve => setTimeout(resolve, 150));
+             const playResult = await spotifyApiCall(`/me/player/play?device_id=${currentDeviceId}`, 'PUT', { uris: [trackUri] });
+             if (playResult.ok || playResult.status === 204) { if (el.gameplayArea.classList.contains('hidden')) { toggleVisibility(el.devSelector, false); toggleVisibility(el.playerSetup, false); toggleVisibility(el.playlistInputArea, false); toggleVisibility(el.gameplayArea, true); } showInfo("Nummer speelt!"); isPlaying = true; updatePlayPauseButton(); return true; }
+             else { let specificError = playResult.error?.message || 'Controleer Spotify & Premium'; if (playResult.error?.reason === 'NO_ACTIVE_DEVICE' || (playResult.status === 404 && !playResult.error?.reason)) { specificError = "Apparaat niet actief/gevonden. Selecteer opnieuw of controleer Spotify."; currentDeviceId = null; toggleVisibility(el.gameplayArea, false); toggleVisibility(el.devSelector, true); await getSpotifyDevices(); } else if (playResult.error?.reason === 'PREMIUM_REQUIRED') { specificError = "Spotify Premium is vereist om af te spelen via de API."; } showError(`Afspelen mislukt: ${specificError}`); isPlaying = false; updatePlayPauseButton(); return false; }
+        }
+        async function togglePlayPause() {
+             if (gameIsOver || !currentDeviceId || !currentTrack) return; const endpoint = isPlaying ? 'pause' : 'play'; const actionText = isPlaying ? 'Pauzeren' : 'Hervatten'; showStatus(`${actionText}...`, true); el.playPauseBtn.disabled = true;
+             const { ok, status, error } = await spotifyApiCall(`/me/player/${endpoint}?device_id=${currentDeviceId}`, 'PUT'); el.playPauseBtn.disabled = false;
+             if (ok || status === 204) { isPlaying = !isPlaying; showInfo(isPlaying ? "Nummer speelt" : "Gepauzeerd"); updatePlayPauseButton(); saveGameState(); } // Save play/pause state
+             else { let specificError = error?.message || 'Onbekende fout'; if (error?.reason === 'NO_ACTIVE_DEVICE' || (status === 404 && !error?.reason)) { specificError = "Apparaat niet actief/gevonden. Selecteer opnieuw of controleer Spotify."; currentDeviceId = null; toggleVisibility(el.gameplayArea, false); toggleVisibility(el.devSelector, true); await getSpotifyDevices(); } else if (error?.reason === 'PREMIUM_REQUIRED') { specificError = "Spotify Premium is vereist."; } showError(`Fout bij ${actionText.toLowerCase()}: ${specificError}`); updatePlayPauseButton(); }
+        }
+        async function fetchTrackDetails(trackId) {
+             showStatus("Details ophalen...", true); const { ok, data, error } = await spotifyApiCall(`/tracks/${trackId}`);
+             if (ok && data) { let coverUrl = ''; if (data.album.images?.length > 0) { coverUrl = data.album.images.find(img => img.height >= 150 && img.height <= 400)?.url || data.album.images[1]?.url || data.album.images[0]?.url || data.album.images[data.album.images.length - 1]?.url; } return { artist: data.artists.map(a => a.name).join(', '), title: data.name, cover: coverUrl, release: data.album.release_date }; }
+             else { showError(`Kon details niet laden: ${error?.message || 'Onbekende fout'}`); return null; }
+        }
+        // --- END Spotify API Functions ---
+
+        // --- Player Management (Unchanged) ---
+        async function loadPlayerFace(playerId, imgElement) {
+            if (!imgElement) return; // Add safety check
+            // Clear previous object URL if exists
+            if (imgElement.dataset.objectUrl) { URL.revokeObjectURL(imgElement.dataset.objectUrl); delete imgElement.dataset.objectUrl; }
+            imgElement.style.backgroundImage = ''; // Clear current image
+            // Reset to default icon style for scoreboard display initially
+            if (imgElement.classList.contains('player-face-display')) {
+                imgElement.style.backgroundImage = `url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23cccccc"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>')`;
+                imgElement.style.backgroundRepeat = 'no-repeat';
+                imgElement.style.backgroundSize = '80%';
+            }
+
+            try { const imageBlob = await getImageFromDB(playerId); if (imageBlob) { const imageUrl = URL.createObjectURL(imageBlob); imgElement.style.backgroundImage = `url('${imageUrl}')`; imgElement.style.backgroundSize = 'cover'; // Ensure cover for loaded images
+                imgElement.style.backgroundRepeat = 'no-repeat'; // Should be default, but ensure
+                imgElement.dataset.objectUrl = imageUrl; // Store URL for later revocation
+            } }
+            catch (error) { console.error(`Error loading face for ${playerId}:`, error); /* Keep default icon */ }
+        }
+        function renderPlayerList() {
+             el.playerList.innerHTML = '';
+             players.forEach(player => {
+                 const li = document.createElement('li'); li.dataset.playerId = player.id; const faceControl = document.createElement('span'); faceControl.className = 'player-face-control'; faceControl.dataset.playerId = player.id; faceControl.title = `Upload foto voor ${player.name}`; faceControl.disabled = gameInProgress; // Disable if game in progress
+                 loadPlayerFace(player.id, faceControl); // Load face image
+                 const captureBtn = document.createElement('button'); captureBtn.className = 'capture-photo-btn'; captureBtn.dataset.playerId = player.id; captureBtn.title = `Maak foto voor ${player.name}`; captureBtn.setAttribute('aria-label', `Maak foto voor ${player.name}`); captureBtn.disabled = gameInProgress; // Disable if game in progress
+                 captureBtn.innerHTML = `<svg viewBox="0 0 24 24"><path d="M9 2L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2h-3.17L15 2H9zm3 15c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z"></path><path d="M12 19c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm0-9c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z" opacity=".3"></path></svg>`;
+                 const playerNameSpan = document.createElement('span'); playerNameSpan.textContent = player.name; playerNameSpan.className = 'player-list-name';
+                 const removeBtn = document.createElement('button'); removeBtn.className = 'remove-player-btn'; removeBtn.dataset.playerId = player.id; removeBtn.setAttribute('aria-label', `Verwijder ${player.name}`); removeBtn.disabled = gameInProgress; // Disable if game in progress
+                 removeBtn.innerHTML = '×';
+                 li.appendChild(faceControl); li.appendChild(captureBtn); li.appendChild(playerNameSpan); li.appendChild(removeBtn); el.playerList.appendChild(li);
+             }); checkCanStartGame();
+        }
+        function addPlayer() {
+             if (gameInProgress) return; const name = el.playerNameInput.value.trim(); if (!name) { showError("Voer een naam in."); return; } if (players.some(p => p.name.toLowerCase() === name.toLowerCase())) { showError(`Speler "${name}" bestaat al.`); return; }
+             const newPlayer = { id: `player_${Date.now()}_${Math.random().toString(16).slice(2)}`, name: name, score: 0, pointsThisTurn: 0, faceDataUrl: null };
+             players.push(newPlayer); renderPlayerList(); el.playerNameInput.value = ''; el.playerNameInput.focus(); showInfo(`Speler "${name}" toegevoegd.`); checkCanStartGame(); saveGameState(); updateExternalScoreboard();
+         }
+        function removePlayer(playerId) {
+             if (gameInProgress) return; const playerToRemove = players.find(p => p.id === playerId); if (!playerToRemove) return;
+             const listItem = el.playerList.querySelector(`li[data-player-id="${playerId}"]`); const faceControl = listItem?.querySelector('.player-face-control'); if (faceControl && faceControl.dataset.objectUrl) { console.log(`Revoking face URL for removed player ${playerId}`); URL.revokeObjectURL(faceControl.dataset.objectUrl); }
+             players = players.filter(p => p.id !== playerId); deleteImageFromDB(playerId).then(() => console.log(`Deleted image for player ${playerId}`)).catch(err => console.error(`Failed to delete image for ${playerId}:`, err));
+             renderPlayerList(); showInfo(`Speler "${playerToRemove.name}" verwijderd.`); checkCanStartGame(); saveGameState(); updateExternalScoreboard();
+         }
+        async function handleImageUpload(event) {
+            if (!currentTargetPlayerId || gameInProgress) { currentTargetPlayerId = null; el.imageUploadInput.value = null; return; }
+            const file = event.target.files[0]; const targetPlayerIdForUpload = currentTargetPlayerId; currentTargetPlayerId = null;
+            if (!file || !file.type.startsWith('image/')) { if(file) showError("Selecteer een geldig afbeeldingsbestand."); el.imageUploadInput.value = null; return; }
+            try { showStatus(`Foto voor speler opslaan...`, true); await saveImageToDB(targetPlayerIdForUpload, file); showSuccess("Foto opgeslagen!");
+                const faceElement = document.querySelector(`#player-setup .player-face-control[data-player-id="${targetPlayerIdForUpload}"]`); if (faceElement) { await loadPlayerFace(targetPlayerIdForUpload, faceElement); }
+                // No need to update scoreboard face element here, renderScoreBoard handles it
+            } catch (error) { showError(`Fout bij opslaan foto: ${error.message || error}`); } finally { el.imageUploadInput.value = null; if(currentGamePIN && !gameInProgress && !gameIsOver && !currentShotMessage && !shouldShowVideoOnScoreboard) showPINStatus(currentGamePIN); } // Show PIN again after action if relevant
+        }
+        // --- END Player Management ---
+
+
+        // --- Scoring Logic (Unchanged) ---
+        function renderScoreBoard() {
+             el.scoreList.innerHTML = '';
+             const totalPointsGiven = players.reduce((sum, p) => sum + p.pointsThisTurn, 0);
+             el.pointsGivenCounter.textContent = totalPointsGiven;
+
+             let sortedPlayers;
+             if (detailsRevealed && !gameIsOver) {
+                 // During scoring phase: sort based on score *before* this turn's points were added
+                 sortedPlayers = [...players].sort((a, b) => (b.score - b.pointsThisTurn) - (a.score - a.pointsThisTurn));
+                 // console.log("Sorting score board based on pre-turn scores."); // Less verbose
+             } else {
+                 // Before scoring phase starts, or after it ends: sort by current total score
+                 sortedPlayers = [...players].sort((a, b) => b.score - a.score);
+                 // console.log("Sorting score board based on current total scores."); // Less verbose
+             }
+
+             sortedPlayers.forEach(player => {
+                 const li = document.createElement('li'); li.classList.add('player-score-item');
+                 const canIncrementPlayer = player.pointsThisTurn < MAX_POINTS_PER_TURN;
+                 const canDecrementPlayer = player.score > 0;
+                 const turnActive = detailsRevealed && !gameIsOver; // Scoring buttons active only when details are revealed & game not over
+
+                 const playerInfoDiv = document.createElement('div'); playerInfoDiv.className = 'player-info';
+                 const faceDisplay = document.createElement('span'); faceDisplay.className = 'player-face-display'; faceDisplay.dataset.playerId = player.id;
+                 loadPlayerFace(player.id, faceDisplay); // Load face
+
+                 const playerNameSpan = document.createElement('span'); playerNameSpan.className = 'player-name'; playerNameSpan.textContent = player.name;
+                 const playerScoreSpan = document.createElement('span'); playerScoreSpan.className = 'player-score'; playerScoreSpan.id = `score-${player.id}`; playerScoreSpan.textContent = player.score;
+                 playerInfoDiv.appendChild(faceDisplay); playerInfoDiv.appendChild(playerNameSpan); playerInfoDiv.appendChild(playerScoreSpan);
+
+                 const scoreControlsDiv = document.createElement('div'); scoreControlsDiv.className = 'score-controls';
+                 const decrementBtn = document.createElement('button'); decrementBtn.className = 'score-btn decrement'; decrementBtn.dataset.playerId = player.id; decrementBtn.setAttribute('aria-label', `Punt eraf voor ${player.name}`); decrementBtn.disabled = !canDecrementPlayer || !turnActive; decrementBtn.textContent = '-';
+                 const incrementBtn = document.createElement('button'); incrementBtn.className = 'score-btn increment'; incrementBtn.dataset.playerId = player.id; incrementBtn.setAttribute('aria-label', `Punt erbij voor ${player.name}`); incrementBtn.disabled = !canIncrementPlayer || !turnActive; incrementBtn.textContent = '+';
+                 scoreControlsDiv.appendChild(decrementBtn); scoreControlsDiv.appendChild(incrementBtn);
+
+                 li.appendChild(playerInfoDiv); li.appendChild(scoreControlsDiv);
+                 el.scoreList.appendChild(li);
+             });
+         }
+        function updateScore(playerId, delta) {
+            if (gameIsOver || !detailsRevealed) return;
+            const playerIndex = players.findIndex(p => p.id === playerId);
+            if (playerIndex === -1) return;
+            const player = players[playerIndex];
+            const originalScore = player.score;
+            const originalPointsThisTurn = player.pointsThisTurn;
+
+            if (delta > 0) {
+                // Increment score
+                if (player.pointsThisTurn < MAX_POINTS_PER_TURN) {
+                    player.score += delta;
+                    player.pointsThisTurn += delta;
+                } else { return; } // Max points already given this turn
+            } else if (delta < 0) {
+                // Decrement score
+                if (player.score > 0) {
+                    player.score = Math.max(0, player.score + delta);
+                    // Only decrement pointsThisTurn if it was positive
+                    if (player.pointsThisTurn > 0) {
+                         player.pointsThisTurn = Math.max(0, player.pointsThisTurn + delta);
+                    }
+                } else { return; } // Score already 0
+            } else { return; } // No change
+
+            if (player.score !== originalScore || player.pointsThisTurn !== originalPointsThisTurn) {
+                renderScoreBoard(); // Re-render with potentially unchanged order but updated scores/button states
+                saveGameState();
+                updateExternalScoreboard(); // Send update with new scores
+                if (player.score >= WIN_SCORE) {
+                    endGame(player);
+                }
+            }
+        }
+        // --- END Scoring Logic ---
+
+        // --- Game State Persistence ---
+        function saveGameState() {
+            // No need to save if no token (though shouldn't happen if game is active)
+            if (!accessToken) return;
+            // Don't save if PIN is missing (critical state element)
+            if (!currentGamePIN) {
+                 console.warn("Attempted to save game state without a PIN. Aborting save.");
+                 return;
+            }
+            try {
+                 const stateToSave = {
+                     gamePIN: currentGamePIN, // <-- Save PIN
+                     players: players.map(p => ({ id: p.id, name: p.name, score: p.score, pointsThisTurn: p.pointsThisTurn, faceDataUrl: p.faceDataUrl })),
+                     currentDeviceId: currentDeviceId,
+                     playlistInputValue: el.playlistInput.value,
+                     currentTrackIndex: currentTrackIndex,
+                     currentTrack: currentTrack ? { id: currentTrack.id, uri: currentTrack.uri, name: currentTrack.name } : null,
+                     detailsRevealed: detailsRevealed,
+                     gameIsOver: gameIsOver,
+                     gameInProgress: gameInProgress,
+                     isPlaying: isPlaying,
+                     currentShotMessage: currentShotMessage,
+                     // ++ ADDED FOR VIDEO STATE ++
+                     currentVideoIdForScoreboard: currentVideoIdForScoreboard,
+                     shouldShowVideoOnScoreboard: shouldShowVideoOnScoreboard
+                     // ++ END VIDEO STATE ++
+                 };
+                 localStorage.setItem(GAME_STATE_KEY, JSON.stringify(stateToSave));
+                 // console.log("Game state saved with PIN:", currentGamePIN); // Less verbose
+             } catch (e) { console.error("Error saving game state:", e); showError("Fout bij opslaan spelstatus."); }
+        }
+        async function loadGameState() {
+            if (!accessToken) return false;
+            const savedStateJSON = localStorage.getItem(GAME_STATE_KEY);
+            if (!savedStateJSON) {
+                gameInProgress = false; gameIsOver = false;
+                // ++ ADDED FOR VIDEO ++
+                currentVideoIdForScoreboard = null; shouldShowVideoOnScoreboard = false;
+                // ++ END VIDEO DATA ++
+                return false;
+            }
+            try {
+                console.log("Loading saved game state...");
+                const savedState = JSON.parse(savedStateJSON);
+
+                // *** Critical: Load PIN first ***
+                currentGamePIN = savedState.gamePIN || null; // <-- Load PIN
+                if (!currentGamePIN) {
+                     console.error("Loaded game state is missing PIN. Clearing state and aborting load.");
+                     localStorage.removeItem(GAME_STATE_KEY); // Clear corrupted state
+                     logoutCleanup(); // Trigger full cleanup if loaded state is bad
+                     updateUIAfterAuthCheck(false); // Force UI to logged-out state
+                     return false;
+                 }
+
+                // PIN is valid, proceed loading other state
+                players = savedState.players?.map(p => ({ ...p, pointsThisTurn: p.pointsThisTurn || 0 })) || [];
+                currentDeviceId = savedState.currentDeviceId || null;
+                el.playlistInput.value = savedState.playlistInputValue || '';
+                currentTrackIndex = savedState.currentTrackIndex !== undefined ? savedState.currentTrackIndex : -1;
+                currentTrack = savedState.currentTrack || null;
+                detailsRevealed = savedState.detailsRevealed || false;
+                gameIsOver = savedState.gameIsOver || false;
+                gameInProgress = savedState.gameInProgress || false;
+                isPlaying = savedState.isPlaying || false; // Load play/pause state
+                currentShotMessage = savedState.currentShotMessage || null;
+                // ++ ADDED FOR VIDEO STATE ++
+                currentVideoIdForScoreboard = savedState.currentVideoIdForScoreboard || null;
+                shouldShowVideoOnScoreboard = savedState.shouldShowVideoOnScoreboard || false;
+                // ++ END VIDEO STATE ++
+
+                renderPlayerList();
+
+                if (!setFirebaseDbRef(currentGamePIN)) { // Set Firebase ref based on loaded PIN
+                     showError("Kon niet verbinden met opgeslagen spel (Firebase pad). Clearing state.");
+                     localStorage.removeItem(GAME_STATE_KEY);
+                     logoutCleanup(); // Clean up fully
+                     updateUIAfterAuthCheck(false);
+                     return false;
+                 }
+                console.log("Successfully loaded game state with PIN:", currentGamePIN);
+                updateExternalScoreboard(); // Update external board with loaded state
+
+                if (gameIsOver) {
+                    console.log("Loaded state is Game Over.");
+                    shouldShowVideoOnScoreboard = false; // Ensure video is off on game over load
+                    currentVideoIdForScoreboard = null;
+                    const winner = players.find(p => p.score >= WIN_SCORE);
+                    if (winner) { endGameUIUpdate(winner); }
+                    else {
+                        // Handle corrupted game over state
+                        toggleVisibility(el.gameplayArea, false);
+                        toggleVisibility(el.gameOver, true);
+                        el.winnerName.textContent = "Onbekend";
+                        el.rewardMessage.textContent = "";
+                        el.winnerFace.style.display = 'none';
+                        el.winnerFace.src = '';
+                        if (el.winnerFace.dataset.objectUrl) { URL.revokeObjectURL(el.winnerFace.dataset.objectUrl); delete el.winnerFace.dataset.objectUrl; }
+                    }
+                    showPINStatus(currentGamePIN); // Show PIN even if game over
+                    updateExternalScoreboard(); // Send update ensuring video is off
+                    return true;
+                } else if (gameInProgress) {
+                    console.log("Loaded state is Game In Progress.");
+                    toggleVisibility(el.devSelector, false);
+                    toggleVisibility(el.playerSetup, false);
+                    toggleVisibility(el.playlistInputArea, false);
+                    toggleVisibility(el.gameplayArea, true);
+                    toggleVisibility(el.gameOver, false);
+                    toggleVisibility(el.menuQuitItem, true);
+                    showPINStatus(currentGamePIN); // Show PIN for ongoing game
+
+                    if(currentShotMessage) { showStatus(currentShotMessage, false, 'shot'); } // Show loaded shot message
+
+                    const playlistId = getPlaylistId(el.playlistInput.value);
+                    if (playlistId) {
+                        await fetchPlaylistTracks(playlistId, false); // Load tracks (uses cache if possible)
+                        if (currentTrackIndex >= 0 && currentTrackIndex < playlistTracks.length) {
+                            currentTrack = playlistTracks[currentTrackIndex];
+                            console.log(`Restored current track: ${currentTrack.name}`);
+                            if (detailsRevealed) {
+                                // If restoring revealed state, show appropriate message or PIN
+                                if(currentShotMessage) { showStatus(currentShotMessage, false, 'shot'); }
+                                else if (shouldShowVideoOnScoreboard) { showInfo("Video speelt op scoreboard..."); }
+                                else { showPINStatus(currentGamePIN); }
+                                await revealSongDetails(true); // Also re-renders scoreboard & handles video state
+                            } else {
+                                // Not revealed state, ensure video off and show PIN
+                                shouldShowVideoOnScoreboard = false;
+                                currentVideoIdForScoreboard = null;
+                                showPINStatus(currentGamePIN); // Show PIN
+                                toggleVisibility(el.songDetails, false);
+                                toggleVisibility(el.scoreBoard, false);
+                                toggleVisibility(el.revealBtn, true);
+                                toggleVisibility(el.nextBtn, false);
+                                renderScoreBoard(); // Render board to show names/faces, but scores only
+                                updateExternalScoreboard(); // Send update ensuring video off
+                            }
+                            updatePlayPauseButton(); // Reflect saved play/pause state
+                            toggleVisibility(el.playbackControls, true);
+                        } else {
+                             console.warn("Saved track index invalid, attempting next song.");
+                             await playNextRandomSong(); // Will also reset turn state (incl. video off)
+                        }
+                    } else {
+                         console.error("Loaded game state had no valid playlist ID.");
+                         await quitGame(); // Quit if playlist is invalid
+                         return false;
+                    }
+                    return true;
+                } else {
+                    // Loaded state is Pre-Game Setup
+                    console.log("Loaded state is Pre-Game Setup.");
+                    toggleVisibility(el.gameplayArea, false);
+                    toggleVisibility(el.gameOver, false);
+                    toggleVisibility(el.menuQuitItem, false);
+                    shouldShowVideoOnScoreboard = false; // Ensure video is off
+                    currentVideoIdForScoreboard = null;
+                    showPINStatus(currentGamePIN); // Show PIN for setup phase
+                    // Make sure setup areas are visible if a device was selected
+                    if(currentDeviceId) {
+                         toggleVisibility(el.devSelector, true);
+                         toggleVisibility(el.playerSetup, true);
+                         toggleVisibility(el.playlistInputArea, true);
+                    } else {
+                        // If no device saved, just show device selector
+                         toggleVisibility(el.devSelector, true);
+                         toggleVisibility(el.playerSetup, false);
+                         toggleVisibility(el.playlistInputArea, false);
+                    }
+                    updateExternalScoreboard(); // Send update ensuring video off
+                    return true;
+                }
+            } catch (e) {
+                 console.error("Error loading or parsing game state:", e);
+                 localStorage.removeItem(GAME_STATE_KEY);
+                 showError("Fout bij laden vorige spelstatus. Start opnieuw.");
+                 logoutCleanup(); // Full cleanup including PIN
+                 updateUIAfterAuthCheck(false);
+                 return false;
+             }
+        }
+        // --- END Game State Persistence ---
+
+        // --- Game Flow & State ---
+        function checkCanStartGame() {
+             const canStart = !gameInProgress && players.length > 0 && !!currentDeviceId && el.playlistInput.value.trim() !== '' && !!currentGamePIN; // Must have PIN
+             el.startGameBtn.disabled = !canStart;
+
+             if (accessToken && !gameInProgress && !gameIsOver) {
+                 if (canStart) {
+                     if(!detailsRevealed && !currentShotMessage && !shouldShowVideoOnScoreboard) showPINStatus(currentGamePIN); // Show PIN if ready and no other message/video
+                 } else if (!currentDeviceId && el.devSelector.classList.contains('hidden')) {
+                     // If device selector hidden, likely still authenticating or loading
+                 } else if (!currentDeviceId) {
+                     showInfo("Selecteer een afspeelapparaat.");
+                 } else if (!currentGamePIN) {
+                      showInfo("Selecteer apparaat om PIN te zien/genereren."); // Or error if device selected but no PIN
+                 } else if (players.length === 0) {
+                      showPINStatus(currentGamePIN); // Show PIN while adding players
+                 } else if (!el.playlistInput.value.trim()) {
+                     showPINStatus(currentGamePIN); // Show PIN while entering playlist
+                 }
+             } else if (!accessToken) {
+                 showStatus("Verbind met Spotify om door te gaan");
+             }
         }
 
-        // --- HTML Escaping Helper ---
-         function escapeHTML(str) {
-             if (str === null || str === undefined) return '';
-             // Basic escaping for display purposes
-             return String(str)
-                 .replace(/&/g, '&amp;')
-                 .replace(/</g, '&lt;')
-                 .replace(/>/g, '&gt;')
-                 .replace(/"/g, '&quot;')
-                 .replace(/'/g, '&#039;');
+        async function startGame() {
+             if (!currentGamePIN || !setFirebaseDbRef(currentGamePIN)) {
+                 showError("Kan spel niet starten zonder geldige game PIN en Firebase verbinding.");
+                 return;
+             }
+             const playlistId = getPlaylistId(el.playlistInput.value.trim());
+             if (!playlistId) { showError("Ongeldige Spotify Playlist URL of ID."); return; }
+             el.startGameBtn.disabled = true;
+             showStatus("Playlist laden...", true);
+             playlistTracks = await fetchPlaylistTracks(playlistId, true); // Force fetch for new game
+
+             if (playlistTracks?.length > 0) {
+                 shuffleArray(playlistTracks);
+                 currentTrackIndex = -1;
+                 gameIsOver = false;
+                 gameInProgress = true;
+                 players.forEach(p => { p.score = 0; p.pointsThisTurn = 0; });
+                 currentShotMessage = null;
+                 // ++ RESET VIDEO STATE FOR NEW GAME ++
+                 shouldShowVideoOnScoreboard = false;
+                 currentVideoIdForScoreboard = null;
+                 // ++ END VIDEO STATE RESET ++
+
+                 toggleVisibility(el.devSelector, false);
+                 toggleVisibility(el.playerSetup, false);
+                 toggleVisibility(el.playlistInputArea, false);
+                 toggleVisibility(el.gameplayArea, true);
+                 toggleVisibility(el.gameOver, false);
+                 toggleVisibility(el.menuQuitItem, true);
+
+                 renderPlayerList(); // Disable player add/remove/face buttons
+                 renderScoreBoard(); // Render initial scoreboard (scores 0)
+                 showPINStatus(currentGamePIN); // Ensure PIN is visible at start of game
+                 updateExternalScoreboard(); // Send initial state (players with 0 score, video off)
+                 saveGameState();
+                 await playNextRandomSong();
+             } else {
+                 showError("Kon playlist niet laden of playlist is leeg.");
+                 gameInProgress = false; // Reset flag
+                 toggleVisibility(el.menuQuitItem, false);
+                 renderPlayerList(); // Re-enable controls
+                 if (currentGamePIN) showPINStatus(currentGamePIN); // Keep showing PIN
+                 checkCanStartGame(); // Re-enable start button if possible
+             }
          }
 
-         // Initial state: Disable button until 4 digits are entered
-         loadButton.disabled = true;
-         // Hide video container initially using CSS classes/styles
-         // scoreboardContent is also hidden initially via class
+        function resetForNewTurn() {
+             detailsRevealed = false;
+             players.forEach(p => p.pointsThisTurn = 0);
+             currentShotMessage = null;
+             // ++ RESET VIDEO STATE FOR NEW TURN ++
+             shouldShowVideoOnScoreboard = false; // Hide video for new turn
+             currentVideoIdForScoreboard = null;
+             // ++ END VIDEO STATE RESET ++
+             toggleVisibility(el.songDetails, false);
+             toggleVisibility(el.scoreBoard, false); // Hide scoreboard initially for new turn
+             toggleVisibility(el.revealBtn, true);
+             el.revealBtn.disabled = false;
+             toggleVisibility(el.nextBtn, false);
+             toggleVisibility(el.playbackControls, true);
+             renderScoreBoard(); // Render but keep hidden until reveal
+             updateExternalScoreboard(); // Send updated scores and cleared shot/video message
+             if (currentGamePIN) showPINStatus(currentGamePIN); // Show PIN at start of turn if no other message
+        }
+
+        async function playNextRandomSong() {
+             if (gameIsOver) return;
+             // Reset turn state *before* picking next song
+             resetForNewTurn(); // This also hides video via Firebase update
+
+             if (!playlistTracks || playlistTracks.length === 0) {
+                 showError("Geen nummers geladen. Controleer playlist.");
+                 await quitGame(); // Quit if no tracks
+                 return;
+             }
+
+             currentTrackIndex++;
+             if (currentTrackIndex >= playlistTracks.length) {
+                 shuffleArray(playlistTracks);
+                 currentTrackIndex = 0;
+                 showInfo("Playlist opnieuw geschud.");
+                 // Avoid playing the exact same song twice in a row after shuffle if possible
+                 if (playlistTracks.length > 1 && currentTrack && playlistTracks[0].uri === currentTrack.uri) {
+                     if (currentTrackIndex + 1 < playlistTracks.length) {
+                         currentTrackIndex = 1;
+                     }
+                 }
+             }
+
+             if (currentTrackIndex >= playlistTracks.length) { // Safety check
+                 showError("Fout bij selecteren volgend nummer na schudden.");
+                 await quitGame();
+                 return;
+             }
+             currentTrack = playlistTracks[currentTrackIndex];
+             console.log(`Playing next: #${currentTrackIndex + 1} - ${currentTrack.uri} (${currentTrack.name})`);
+
+             // Don't show scoreboard yet, show after reveal
+             toggleVisibility(el.scoreBoard, false);
+
+             const started = await playTrack(currentTrack.uri);
+             if (started) {
+                 saveGameState(); // Save state with new track index (and video off state)
+             } else {
+                 showError("Kon volgend nummer niet starten. Controleer apparaat/verbinding.");
+                 gameInProgress = true; // Keep game active state
+                 currentTrack = null; // Clear current track as it failed
+                 currentTrackIndex--; // Revert index
+                 saveGameState();
+                 if (currentGamePIN) showPINStatus(currentGamePIN); // Show PIN again
+                 checkCanStartGame();
+             }
+        }
+
+        async function revealSongDetails(isRestoring = false) {
+             if (gameIsOver || !currentTrack || (detailsRevealed && !isRestoring)) return;
+             el.revealBtn.disabled = true;
+             if (!isRestoring) showStatus("Details ophalen...", true);
+
+             const details = await fetchTrackDetails(currentTrack.id);
+             if (!details) {
+                 if (!isRestoring) showStatus("Kon details niet laden.", false, 'error');
+                 el.revealBtn.disabled = false; // Allow retry
+                 return;
+             }
+
+             el.songArtist.textContent = details.artist;
+             el.songTitle.textContent = details.title;
+             el.songCover.src = details.cover || '';
+             el.songCover.style.display = details.cover ? 'block' : 'none';
+             el.songRelease.textContent = details.release;
+
+             detailsRevealed = true; // Mark scoring phase as active
+             toggleVisibility(el.songDetails, true);
+             toggleVisibility(el.scoreBoard, true); // SHOW scoreboard now
+             renderScoreBoard(); // Render with stable order based on pre-turn scores
+             toggleVisibility(el.revealBtn, false);
+             toggleVisibility(el.nextBtn, true);
+
+             currentShotMessage = null; // Reset shot message before check
+
+             // ++ ADDED FOR VIDEO ++
+             if (!isRestoring) { // Only search for video if not just restoring state
+                let foundVideoId = await searchYouTubeVideo(details.artist, details.title);
+                currentVideoIdForScoreboard = foundVideoId; // Store found ID (or null)
+                shouldShowVideoOnScoreboard = !!foundVideoId; // Set flag to true only if ID found
+                console.log(`Video Search Result: ID=${currentVideoIdForScoreboard}, Show=${shouldShowVideoOnScoreboard}`);
+             } else {
+                 // Restoring state: Video ID and show flag loaded by loadGameState()
+                 console.log(`Restoring video state: ID=${currentVideoIdForScoreboard}, Show=${shouldShowVideoOnScoreboard}`);
+             }
+             // ++ END VIDEO DATA ++
+
+
+             if (!isRestoring) {
+                 const lowerTitle = details.title.toLowerCase();
+                 const triggerWord = drinkingWords.find(word => lowerTitle.includes(word));
+                 if (triggerWord && players.length > 0) {
+                     const unluckyPlayer = players[Math.floor(Math.random() * players.length)];
+                     currentShotMessage = `🍻 ${unluckyPlayer.name} moet een shotje nemen!`;
+                     showStatus(currentShotMessage, false, 'shot');
+                 } else if (!shouldShowVideoOnScoreboard) { // Only show "Geef punten!" if no shot message AND no video
+                    showInfo("Geef punten!");
+                 } else if (shouldShowVideoOnScoreboard) {
+                    showInfo("Video speelt op scoreboard..."); // Indicate video is playing
+                 }
+                 // Update Firebase and save state AFTER determining messages/video
+                 updateExternalScoreboard(); // Send update with details revealed (and video state)
+                 saveGameState(); // Save state including video state
+             } else {
+                 // Restoring: Show shot message if it existed, or video status, or PIN
+                 if(currentShotMessage) { showStatus(currentShotMessage, false, 'shot'); }
+                 else if (shouldShowVideoOnScoreboard) { showInfo("Video speelt op scoreboard..."); }
+                 else if (currentGamePIN) { showPINStatus(currentGamePIN); }
+                 else { showInfo("Details hersteld. Geef punten!"); }
+                 // No need to update firebase/save state when just restoring UI
+             }
+         }
+        // --- END Game Flow & State ---
+
+
+        // --- End Game, Quit Game, New Game ---
+        function endGameUIUpdate(winner) {
+             const shots = (players.length >= 5 ? 2 : 1); // Adjusted logic to match spelregels.html
+             el.winnerName.textContent = winner.name;
+             el.rewardMessage.textContent = `${winner.name} mag ${shots} shot${shots > 1 ? 's' : ''} uitdelen!`;
+
+             el.winnerFace.style.display = 'none'; el.winnerFace.src = '';
+             if (el.winnerFace.dataset.objectUrl) { URL.revokeObjectURL(el.winnerFace.dataset.objectUrl); delete el.winnerFace.dataset.objectUrl; }
+             getImageFromDB(winner.id)
+                 .then(imageBlob => { if (imageBlob) { const imageUrl = URL.createObjectURL(imageBlob); el.winnerFace.src = imageUrl; el.winnerFace.style.display = 'block'; el.winnerFace.dataset.objectUrl = imageUrl; } })
+                 .catch(err => console.error("Failed to load winner face:", err));
+
+             toggleVisibility(el.devSelector, false); toggleVisibility(el.playerSetup, false); toggleVisibility(el.playlistInputArea, false); toggleVisibility(el.gameplayArea, false); toggleVisibility(el.gameOver, true); toggleVisibility(el.menuQuitItem, false);
+             renderScoreBoard(); // Render final scores
+             if (currentGamePIN) showPINStatus(currentGamePIN); // Still show PIN
+        }
+        async function endGame(winner) {
+             if (gameIsOver) return;
+             gameIsOver = true; gameInProgress = false; detailsRevealed = false;
+             // ++ RESET VIDEO STATE ON GAME END ++
+             shouldShowVideoOnScoreboard = false; // Hide video on game end
+             currentVideoIdForScoreboard = null;
+             // ++ END VIDEO STATE RESET ++
+             console.log(`Game Over! Winner: ${winner.name}`);
+
+             // Stop playback
+             if (isPlaying && accessToken && currentDeviceId) {
+                 try { await spotifyApiCall('/me/player/pause', 'PUT'); isPlaying = false; updatePlayPauseButton(); }
+                 catch(e){ console.warn("Failed to pause on game end:", e); }
+             }
+             // Play winner song (optional)
+             if (accessToken && currentDeviceId && WINNER_SONG_URI) {
+                 spotifyApiCall(`/me/player/play?device_id=${currentDeviceId}`, 'PUT', { uris: [WINNER_SONG_URI] })
+                     .catch(e => console.warn("Failed to play winner song:", e));
+             }
+
+             endGameUIUpdate(winner); // Update UI including PIN status
+             updateExternalScoreboard(); // Send final state including winner, isGameOver: true, video: false
+             saveGameState(); // Save the final game over state (with video off)
+         }
+        async function quitGame() {
+             console.log("Quitting game / Resetting to setup...");
+             closeCaptureModal();
+             showInfo("Spel gestopt. Stel opnieuw in.");
+             document.querySelectorAll('[data-object-url]').forEach(el => { if (el.dataset.objectUrl && el.dataset.objectUrl.startsWith('blob:')) { try { URL.revokeObjectURL(el.dataset.objectUrl); } catch(e) { console.warn("Error revoking Object URL:", e, el.dataset.objectUrl); } } delete el.dataset.objectUrl; if(el.tagName === 'IMG') el.src = ''; else el.style.backgroundImage = ''; });
+
+             if (isPlaying && accessToken && currentDeviceId) {
+                 try { await spotifyApiCall('/me/player/pause', 'PUT'); } catch(e){ console.warn("Failed to pause on quit game:", e); }
+             }
+
+             // Signal scoreboard to hide video BEFORE removing Firebase data
+             shouldShowVideoOnScoreboard = false;
+             currentVideoIdForScoreboard = null;
+             updateExternalScoreboard(); // Send final update to hide video
+
+             // Remove game data from Firebase *under the current PIN*
+             if (dbRef) { dbRef.remove().then(() => console.log(`Removed game data from Firebase at ${dbRef.toString()} (keeping PIN ${currentGamePIN})`)).catch(e => console.error(`Failed to remove game data from Firebase: ${e.message}`)); }
+             else if (currentGamePIN) { firebase.database().ref(`${FIREBASE_ROOT_PATH}/${currentGamePIN}`).remove().then(() => console.log(`Removed game data from Firebase for PIN ${currentGamePIN} (without active ref)`)).catch(e => console.error(`Failed to remove game data for PIN ${currentGamePIN}: ${e.message}`)); }
+
+             // Reset local state *except* PIN
+             playlistTracks = []; currentTrack = null; currentTrackIndex = -1; isPlaying = false; detailsRevealed = false; gameIsOver = false; gameInProgress = false; currentShotMessage = null;
+             // Video state already reset above
+
+             // Clear players scores but keep players and faces
+             players.forEach(p => { p.score = 0; p.pointsThisTurn = 0; });
+
+             saveGameState(); // Save the reset state (scores 0, game not in progress, video off) but keep PIN
+             console.log("Game state reset (scores cleared, keeping PIN, video off) and saved.");
+
+             // Reset UI
+             toggleVisibility(el.gameplayArea, false); toggleVisibility(el.gameOver, false); toggleVisibility(el.songDetails, false); toggleVisibility(el.scoreBoard, false); toggleVisibility(el.menuQuitItem, false); toggleVisibility(el.devSelector, true);
+             const showSetup = !!currentDeviceId && !!currentGamePIN;
+             toggleVisibility(el.playerSetup, showSetup); toggleVisibility(el.playlistInputArea, showSetup);
+
+             renderPlayerList(); // Re-render player list enabling controls
+             el.playlistInput.value = '';
+             if (accessToken) { await getSpotifyDevices(); } // Re-fetch devices, will reuse existing PIN
+             else { showStatus("Verbind met Spotify om door te gaan"); }
+             checkCanStartGame();
+             if (el.collapsibleMenu && !el.collapsibleMenu.classList.contains('hidden')) { toggleMenu(); }
+        }
+         async function setupNewGame() {
+            console.log("Setting up for a new game (from game over)...");
+            closeCaptureModal();
+            if (el.winnerFace.dataset.objectUrl && el.winnerFace.dataset.objectUrl.startsWith('blob:')) { try { URL.revokeObjectURL(el.winnerFace.dataset.objectUrl); } catch(e) { console.warn("Error revoking winner face Object URL:", e); } delete el.winnerFace.dataset.objectUrl; el.winnerFace.src = ''; el.winnerFace.style.display = 'none'; }
+
+             // Signal scoreboard to hide video BEFORE potentially removing Firebase data
+             shouldShowVideoOnScoreboard = false;
+             currentVideoIdForScoreboard = null;
+             updateExternalScoreboard(); // Send update to ensure video is off
+
+             // Remove old game data from Firebase if ref exists and matches PIN
+             if (dbRef && currentGamePIN && dbRef.toString().includes(currentGamePIN)) { dbRef.remove().then(() => console.log(`Removed previous game data from Firebase at ${dbRef.toString()} (keeping PIN ${currentGamePIN})`)).catch(e => console.error(`Failed to remove previous game data: ${e.message}`)); }
+             else if (currentGamePIN) { firebase.database().ref(`${FIREBASE_ROOT_PATH}/${currentGamePIN}`).remove().then(() => console.log(`Removed previous game data for PIN ${currentGamePIN} (without active ref)`)).catch(e => console.error(`Failed to remove previous game data for PIN ${currentGamePIN}: ${e.message}`)); }
+
+            // Reset state variables, *except* PIN
+            playlistTracks = []; currentTrack = null; currentTrackIndex = -1; isPlaying = false; detailsRevealed = false; gameIsOver = false; gameInProgress = false; currentShotMessage = null;
+            // Video state already reset above
+
+            // Clear scores but keep players
+            players.forEach(p => { p.score = 0; p.pointsThisTurn = 0; });
+
+            saveGameState(); // Save the reset state (scores 0, game not over, video off) but keep PIN
+            console.log("Game state reset for new game (scores cleared, keeping PIN, video off) and saved.");
+
+            // Reset UI
+            toggleVisibility(el.gameplayArea, false); toggleVisibility(el.gameOver, false); toggleVisibility(el.songDetails, false); toggleVisibility(el.scoreBoard, false); toggleVisibility(el.menuQuitItem, false); toggleVisibility(el.devSelector, true);
+            const showSetup = !!currentDeviceId && !!currentGamePIN;
+            toggleVisibility(el.playerSetup, showSetup); toggleVisibility(el.playlistInputArea, showSetup);
+
+            renderPlayerList(); // Re-render player list with scores reset and controls enabled
+            el.playlistInput.value = '';
+
+            if (accessToken) { showInfo("Klaar voor nieuw spel. Selecteer apparaat."); await getSpotifyDevices(); }
+            else { showStatus("Verbind met Spotify om door te gaan"); }
+            checkCanStartGame();
+        }
+        // --- END End Game, Quit Game, New Game ---
+
+
+        // --- Authentication and Menu Functions ---
+        async function validateAndSetToken(token) {
+             accessToken = token; console.log("Validating stored/new token..."); const { ok, error } = await spotifyApiCall('/me'); if (ok) { console.log("Token is valid."); localStorage.setItem(TOKEN_STORAGE_KEY, token); return true; } else { console.log("Token validation failed or expired.", error?.message); accessToken = null; localStorage.removeItem(TOKEN_STORAGE_KEY); if (error && error.message !== "Sessie verlopen. Log opnieuw in.") { showError("Kon Spotify verbinding niet valideren."); } return false; }
+        }
+        async function checkAuth() {
+             let authenticated = false;
+             try {
+                 const hashParams = new URLSearchParams(window.location.hash.substring(1));
+                 const tokenFromUrl = hashParams.get('access_token');
+                 const errorFromUrl = hashParams.get('error');
+                 history.replaceState(null, null, window.location.pathname + window.location.search); // Clean URL
+
+                 if (errorFromUrl) { showError(`Spotify Login Fout: ${errorFromUrl}`); logoutCleanup(); authenticated = false; }
+                 else if (tokenFromUrl) { console.log("Token found in URL hash."); authenticated = await validateAndSetToken(tokenFromUrl); if (!authenticated) logoutCleanup(); }
+                 else { const tokenFromStorage = localStorage.getItem(TOKEN_STORAGE_KEY); if (tokenFromStorage) { console.log("Token found in localStorage."); authenticated = await validateAndSetToken(tokenFromStorage); if (!authenticated) logoutCleanup(); } else { console.log("No token found."); logoutCleanup(); authenticated = false; } }
+             } catch (e) { console.error("Error during auth check:", e); logoutCleanup(); authenticated = false; showError("Fout bij authenticatie controle."); }
+
+             updateUIAfterAuthCheck(authenticated); // Update menu items etc.
+
+             if (authenticated) {
+                 initializeFirebase();
+                 const loadedFromState = await loadGameState();
+
+                 // Logic to handle PIN and setup visibility after loading state
+                 if (!loadedFromState && !currentGamePIN) { console.log("Auth successful, no game state loaded and no existing PIN. Fetching devices to potentially generate PIN."); }
+                 else if (loadedFromState) { console.log("Auth successful, game state loaded/resumed with PIN:", currentGamePIN); }
+                 else if (currentGamePIN) {
+                    if (!setFirebaseDbRef(currentGamePIN)) { showError("Kon Firebase niet instellen met bestaande PIN. Clearing PIN."); logoutCleanup(); updateUIAfterAuthCheck(false); return; }
+                    console.log("Auth successful, no specific game state loaded, but reusing existing PIN:", currentGamePIN);
+                    // Ensure video state is reset if reusing PIN without loaded game state
+                    shouldShowVideoOnScoreboard = false; currentVideoIdForScoreboard = null;
+                    updateExternalScoreboard();
+                    if(currentDeviceId) { toggleVisibility(el.devSelector, true); toggleVisibility(el.playerSetup, true); toggleVisibility(el.playlistInputArea, true); showPINStatus(currentGamePIN); }
+                    else { toggleVisibility(el.devSelector, true); toggleVisibility(el.playerSetup, false); toggleVisibility(el.playlistInputArea, false); showInfo("Selecteer afspeelapparaat."); }
+                 }
+
+                 await getSpotifyDevices();
+
+                  // Further UI adjustments based on loaded/current state
+                  if (!currentDeviceId) { toggleVisibility(el.devSelector, true); toggleVisibility(el.playerSetup, false); toggleVisibility(el.playlistInputArea, false); }
+                  else if (!gameInProgress && !gameIsOver && currentGamePIN) { toggleVisibility(el.devSelector, true); toggleVisibility(el.playerSetup, true); toggleVisibility(el.playlistInputArea, true); if (!currentShotMessage && !detailsRevealed && !shouldShowVideoOnScoreboard) showPINStatus(currentGamePIN); }
+                 checkCanStartGame();
+                 toggleVisibility(el.menuQuitItem, gameInProgress && !gameIsOver);
+             } else { showStatus("Verbind met Spotify om door te gaan"); }
+             return authenticated;
+        }
+        function login() { saveGameState(); const scopes = 'user-read-private user-read-email streaming user-modify-playback-state user-read-playback-state'; const authUrl = 'https://accounts.spotify.com/authorize?response_type=token&client_id=' + encodeURIComponent(CLIENT_ID) + '&scope=' + encodeURIComponent(scopes) + '&redirect_uri=' + encodeURIComponent(REDIRECT_URI) + '&show_dialog=true'; window.location.href = authUrl; }
+        function logoutCleanup() {
+            accessToken = null; currentGamePIN = null; dbRef = null; closeCaptureModal();
+            localStorage.removeItem(TOKEN_STORAGE_KEY); localStorage.removeItem(GAME_STATE_KEY);
+            document.querySelectorAll('[data-object-url]').forEach(element => { if (element.dataset.objectUrl && element.dataset.objectUrl.startsWith('blob:')) { try { URL.revokeObjectURL(element.dataset.objectUrl); } catch(e) { console.warn("Error revoking Object URL on logout:", e); } } delete element.dataset.objectUrl; if(element.tagName === 'IMG') element.src = ''; else element.style.backgroundImage = ''; });
+            players = []; playlistTracks = []; currentTrack = null; currentTrackIndex = -1; isPlaying = false; detailsRevealed = false; gameIsOver = false; gameInProgress = false; currentDeviceId = null; currentShotMessage = null;
+            // ++ RESET VIDEO STATE ON CLEANUP ++
+            shouldShowVideoOnScoreboard = false; currentVideoIdForScoreboard = null;
+            // ++ END VIDEO STATE RESET ++
+            console.log("Cleaned up tokens, PIN, game state, and variables.");
+        }
+        function updateUIAfterAuthCheck(isAuthenticated) {
+             toggleVisibility(el.loginArea, false); toggleVisibility(el.menuLoginItem, !isAuthenticated); toggleVisibility(el.menuLogoutItem, isAuthenticated);
+             if (!isAuthenticated) { toggleVisibility(el.devSelector, false); toggleVisibility(el.playerSetup, false); toggleVisibility(el.playlistInputArea, false); toggleVisibility(el.gameplayArea, false); toggleVisibility(el.gameOver, false); toggleVisibility(el.menuQuitItem, false); el.devList.innerHTML = ''; el.playerList.innerHTML = ''; el.playlistInput.value = ''; showStatus("Verbind met Spotify om door te gaan"); }
+        }
+        async function logout() {
+            console.log("User logging out...");
+            if (isPlaying && accessToken && currentDeviceId) { try { await spotifyApiCall('/me/player/pause', 'PUT'); } catch (e) { console.warn("Failed to pause playback on logout:", e); } }
+
+             // Signal scoreboard to hide video BEFORE removing Firebase data
+             shouldShowVideoOnScoreboard = false;
+             currentVideoIdForScoreboard = null;
+             if (currentGamePIN && setFirebaseDbRef(currentGamePIN)) { // Ensure ref is set before update
+                updateExternalScoreboard();
+             } else {
+                console.warn("Cannot send final 'hide video' update on logout - PIN/Ref missing.");
+             }
+
+             // Remove game data from Firebase on logout
+             if (dbRef) { dbRef.remove().then(() => console.log(`Removed game data from Firebase at ${dbRef.toString()} during logout`)).catch(e => console.error(`Failed to remove game data on logout: ${e.message}`)); }
+             else if (currentGamePIN) { firebase.database().ref(`${FIREBASE_ROOT_PATH}/${currentGamePIN}`).remove().catch(e => console.error(`Failed to remove game data via path on logout: ${e.message}`)); }
+
+            logoutCleanup(); // Clears tokens, PIN, state etc. (also resets video state vars)
+            updateUIAfterAuthCheck(false); // Update UI to logged-out state
+            showInfo("Succesvol uitgelogd.");
+            if (el.collapsibleMenu && !el.collapsibleMenu.classList.contains('hidden')) { toggleMenu(); }
+        }
+        function toggleMenu() { const isExpanded = el.menuToggleBtn.getAttribute('aria-expanded') === 'true'; el.menuToggleBtn.setAttribute('aria-expanded', !isExpanded); el.collapsibleMenu.classList.toggle('hidden'); }
+        document.addEventListener('click', function(event) { if (!el.collapsibleMenu || !el.menuToggleBtn) return; const isClickInsideMenu = el.collapsibleMenu.contains(event.target); const isClickOnToggle = el.menuToggleBtn.contains(event.target); const isMenuOpen = !el.collapsibleMenu.classList.contains('hidden'); if (!isClickInsideMenu && !isClickOnToggle && isMenuOpen) { toggleMenu(); } });
+        // --- END Authentication and Menu ---
+
+
+        // --- Camera Capture Functions (Unchanged) ---
+        async function openCaptureModal(playerId) {
+            if (gameInProgress) return; currentTargetPlayerId = playerId; toggleVisibility(el.captureModal, true); toggleVisibility(el.captureControls, false); el.captureStatus.textContent = "Camera starten..."; toggleVisibility(el.captureStatus, true); el.captureVideo.style.display = 'none';
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { showError("Camera API niet ondersteund door deze browser."); closeCaptureModal(); return; }
+            try { const constraints = { video: { facingMode: "user" }, audio: false }; currentStream = await navigator.mediaDevices.getUserMedia(constraints); el.captureVideo.srcObject = currentStream; el.captureVideo.onloadedmetadata = () => { el.captureVideo.play(); el.captureVideo.style.display = 'block'; toggleVisibility(el.captureControls, true); toggleVisibility(el.captureStatus, false); }; }
+            catch (err) { console.error("Error accessing camera:", err); let errorMsg = "Kon camera niet benaderen."; if (err.name === "NotAllowedError" || err.name === "PermissionDeniedError") { errorMsg = "Camera toegang geweigerd. Controleer browser permissies."; } else if (err.name === "NotFoundError" || err.name === "DevicesNotFoundError") { errorMsg = "Geen camera gevonden op dit apparaat."; } else if (err.name === "NotReadableError" || err.name === "TrackStartError") { errorMsg = "Camera is mogelijk al in gebruik."; } showError(errorMsg); closeCaptureModal(); }
+        }
+        function closeCaptureModal() {
+            if (currentStream) { currentStream.getTracks().forEach(track => track.stop()); currentStream = null; el.captureVideo.srcObject = null; } toggleVisibility(el.captureModal, false); currentTargetPlayerId = null; el.captureVideo.style.display = 'none'; toggleVisibility(el.captureStatus, true); el.captureStatus.textContent = "Camera laden..."; toggleVisibility(el.captureControls, false);
+        }
+        async function snapPhoto() {
+            if (!currentTargetPlayerId || !el.captureVideo.srcObject || gameInProgress) return; el.snapPhotoBtn.disabled = true; el.cancelCaptureBtn.disabled = true; el.captureStatus.textContent = "Foto verwerken..."; toggleVisibility(el.captureStatus, true);
+            const video = el.captureVideo; const canvas = el.captureCanvas; const context = canvas.getContext('2d'); canvas.width = video.videoWidth; canvas.height = video.videoHeight; context.save(); context.scale(-1, 1); context.drawImage(video, -canvas.width, 0, canvas.width, canvas.height); context.restore();
+            canvas.toBlob(async (blob) => { if (blob) { const targetPlayerIdForSnap = currentTargetPlayerId; try { console.log(`Captured blob size: ${blob.size} bytes for player ${targetPlayerIdForSnap}`); await saveImageToDB(targetPlayerIdForSnap, blob); showSuccess("Foto opgeslagen!"); const faceElement = document.querySelector(`#player-setup .player-face-control[data-player-id="${targetPlayerIdForSnap}"]`); if (faceElement) { await loadPlayerFace(targetPlayerIdForSnap, faceElement); } } catch (error) { showError(`Fout bij opslaan foto: ${error.message || error}`); } finally { closeCaptureModal(); el.snapPhotoBtn.disabled = false; el.cancelCaptureBtn.disabled = false; if(currentGamePIN && !gameInProgress && !gameIsOver && !currentShotMessage && !shouldShowVideoOnScoreboard) showPINStatus(currentGamePIN); } } else { showError("Kon foto niet converteren."); closeCaptureModal(); el.snapPhotoBtn.disabled = false; el.cancelCaptureBtn.disabled = false; if(currentGamePIN && !gameInProgress && !gameIsOver && !currentShotMessage && !shouldShowVideoOnScoreboard) showPINStatus(currentGamePIN); } }, 'image/jpeg', 0.9);
+        }
+        // --- END Camera Capture ---
+
+
+        // --- Initialization and Event Listeners ---
+        function attachListeners() {
+            el.refreshDevBtn?.addEventListener('click', getSpotifyDevices);
+            el.devList?.addEventListener('change', async () => { // Make async
+                const previousDeviceId = currentDeviceId; currentDeviceId = el.devList.value || null; const showSetupSteps = !!currentDeviceId;
+                if (!gameInProgress) { if (currentDeviceId && !currentGamePIN) { currentGamePIN = generatePIN(); if (!setFirebaseDbRef(currentGamePIN)) { showError("Kon Firebase niet instellen voor nieuw spel PIN. Probeer opnieuw."); currentDeviceId = null; el.devList.value = ""; return; } console.log("Generated new PIN:", currentGamePIN); showPINStatus(currentGamePIN); saveGameState(); } else if (currentDeviceId && currentGamePIN) { if (!setFirebaseDbRef(currentGamePIN)) { showError("Kon Firebase niet instellen met bestaande PIN."); } else { showPINStatus(currentGamePIN); } } else { showInfo("Selecteer een geldig afspeelapparaat."); } toggleVisibility(el.playerSetup, showSetupSteps && !!currentGamePIN); toggleVisibility(el.playlistInputArea, showSetupSteps && !!currentGamePIN); } checkCanStartGame(); if (currentDeviceId !== previousDeviceId) { saveGameState(); } });
+            el.addPlayerBtn?.addEventListener('click', addPlayer);
+            el.playerNameInput?.addEventListener('keypress', (e) => { if (e.key === 'Enter') addPlayer(); });
+            el.playerList?.addEventListener('click', (e) => { const removeButton = e.target.closest('.remove-player-btn'); if (removeButton && !removeButton.disabled) { removePlayer(removeButton.dataset.playerId); return; } const faceControl = e.target.closest('.player-face-control'); if (faceControl && !faceControl.disabled && !gameInProgress) { currentTargetPlayerId = faceControl.dataset.playerId; console.log(`Opening image upload for player ${currentTargetPlayerId}`); el.imageUploadInput?.click(); return; } const captureButton = e.target.closest('.capture-photo-btn'); if (captureButton && !captureButton.disabled && !gameInProgress) { const playerId = captureButton.dataset.playerId; console.log(`Opening camera capture for player ${playerId}`); openCaptureModal(playerId); return; } });
+            el.imageUploadInput?.addEventListener('change', handleImageUpload);
+            el.playlistInput?.addEventListener('input', () => { checkCanStartGame(); saveGameState(); });
+            el.startGameBtn?.addEventListener('click', startGame);
+            el.playPauseBtn?.addEventListener('click', togglePlayPause);
+            el.revealBtn?.addEventListener('click', () => revealSongDetails(false));
+            el.nextBtn?.addEventListener('click', playNextRandomSong);
+            el.scoreBoard?.addEventListener('click', (e) => { const target = e.target.closest('.score-btn'); if (target && !target.disabled) { const playerId = target.dataset.playerId; const isIncrement = target.classList.contains('increment'); updateScore(playerId, isIncrement ? 1 : -1); } });
+            el.newGameBtn?.addEventListener('click', setupNewGame);
+            el.menuToggleBtn?.addEventListener('click', toggleMenu);
+            el.menuLoginBtn?.addEventListener('click', () => { login(); if (el.collapsibleMenu && !el.collapsibleMenu.classList.contains('hidden')) toggleMenu(); });
+            el.menuLogoutBtn?.addEventListener('click', () => { logout(); });
+            el.menuQuitBtn?.addEventListener('click', () => { quitGame(); });
+            el.snapPhotoBtn?.addEventListener('click', snapPhoto);
+            el.cancelCaptureBtn?.addEventListener('click', closeCaptureModal);
+            console.log("Event listeners attached.");
+        }
+
+        window.addEventListener('load', async () => {
+             console.log("Window loaded. Initializing Hardster Game...");
+             attachListeners();
+             try { await initDB(); await checkAuth(); }
+             catch (e) { console.error("Error during initial load sequence:", e); showError("Er is een fout opgetreden bij het laden van de app."); logoutCleanup(); updateUIAfterAuthCheck(false); }
+             console.log("Hardster Game Initialized.");
+        });
 
     </script>
 </body>
