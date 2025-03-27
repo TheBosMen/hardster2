@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <!-- *** ADDED VIEWPORT META TAG FOR MOBILE RESPONSIVENESS *** -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hardster</title> {/* Added a title */}
+    <title>Hardster</title>
     <style>
         /* --- STYLES ARE UNCHANGED --- */
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Roboto:wght@300;400;700&display=swap');
@@ -775,15 +775,15 @@
         let playlistTracks = [];
         let currentTrack = null;
         let currentTrackIndex = -1;
-        let isPlaying = false;
+        let isPlaying = false; // Spotify playing state
         let detailsRevealed = false; // Indicates if the current song's details are shown (scoring phase)
         let gameIsOver = false;
         let gameInProgress = false;
         let currentTargetPlayerId = null;
         let currentStream = null;
         let currentShotMessage = null; // For storing the shot message
-        let currentVideoIdForScoreboard = null; // << NEW: YouTube video ID for scoreboard
-        let shouldShowVideoOnScoreboard = false; // << NEW: Flag to show video
+        let currentVideoIdForScoreboard = null; // YouTube video ID for scoreboard
+        let shouldShowVideoOnScoreboard = false; // Flag to show video
 
         // --- Firebase Initialization ---
         let firebaseApp;
@@ -866,14 +866,16 @@
                 winnerName: winner ? winner.name : null,
                 winnerFaceDataUrl: winnerFaceDataUrl, // Send winner face
                 shotMessage: gameIsOver ? null : (currentShotMessage || null), // Clear shot message if game is over
-                // ++ UPDATED FOR VIDEO ++
                 currentVideoId: shouldShowVideoOnScoreboard ? (currentVideoIdForScoreboard || null) : null,
                 showVideo: shouldShowVideoOnScoreboard,
-                // ++ END VIDEO DATA ++
+                isPlaying: isPlaying, // <<< ADDED isPlaying state for sync
                 timestamp: firebase.database.ServerValue.TIMESTAMP
             };
 
             dbRef.set(scoreboardData)
+               .then(() => {
+                   // console.log("Firebase updated successfully with state:", scoreboardData); // Optional: Verbose logging
+               })
                .catch(error => console.error("Firebase update failed:", error));
         }
 
@@ -984,7 +986,7 @@
         }
         // --- END Helper Functions ---
 
-        // --- YouTube Search ---
+        // --- YouTube Search (Unchanged) ---
         async function searchYouTubeVideo(artist, title) {
             if (!YOUTUBE_API_KEY) {
                 console.warn("YouTube API Key is missing. Cannot search for videos.");
@@ -1101,7 +1103,13 @@
         async function togglePlayPause() {
              if (gameIsOver || !currentDeviceId || !currentTrack) return; const endpoint = isPlaying ? 'pause' : 'play'; const actionText = isPlaying ? 'Pauzeren' : 'Hervatten'; showStatus(`${actionText}...`, true); el.playPauseBtn.disabled = true;
              const { ok, status, error } = await spotifyApiCall(`/me/player/${endpoint}?device_id=${currentDeviceId}`, 'PUT'); el.playPauseBtn.disabled = false;
-             if (ok || status === 204) { isPlaying = !isPlaying; showInfo(isPlaying ? "Nummer speelt" : "Gepauzeerd"); updatePlayPauseButton(); saveGameState(); } // Save play/pause state
+             if (ok || status === 204) {
+                 isPlaying = !isPlaying; // Update state FIRST
+                 showInfo(isPlaying ? "Nummer speelt" : "Gepauzeerd");
+                 updatePlayPauseButton();
+                 saveGameState();
+                 updateExternalScoreboard(); // <<< Send updated state including isPlaying
+             }
              else { let specificError = error?.message || 'Onbekende fout'; if (error?.reason === 'NO_ACTIVE_DEVICE' || (status === 404 && !error?.reason)) { specificError = "Apparaat niet actief/gevonden. Selecteer opnieuw of controleer Spotify."; currentDeviceId = null; toggleVisibility(el.gameplayArea, false); toggleVisibility(el.devSelector, true); await getSpotifyDevices(); } else if (error?.reason === 'PREMIUM_REQUIRED') { specificError = "Spotify Premium is vereist."; } showError(`Fout bij ${actionText.toLowerCase()}: ${specificError}`); updatePlayPauseButton(); }
         }
         async function fetchTrackDetails(trackId) {
@@ -1166,7 +1174,7 @@
         // --- END Player Management ---
 
 
-        // --- Scoring Logic (Unchanged) ---
+        // --- Scoring Logic ---
         function renderScoreBoard() {
              el.scoreList.innerHTML = '';
              const totalPointsGiven = players.reduce((sum, p) => sum + p.pointsThisTurn, 0);
@@ -1176,11 +1184,9 @@
              if (detailsRevealed && !gameIsOver) {
                  // During scoring phase: sort based on score *before* this turn's points were added
                  sortedPlayers = [...players].sort((a, b) => (b.score - b.pointsThisTurn) - (a.score - a.pointsThisTurn));
-                 // console.log("Sorting score board based on pre-turn scores."); // Less verbose
              } else {
                  // Before scoring phase starts, or after it ends: sort by current total score
                  sortedPlayers = [...players].sort((a, b) => b.score - a.score);
-                 // console.log("Sorting score board based on current total scores."); // Less verbose
              }
 
              sortedPlayers.forEach(player => {
@@ -1234,7 +1240,7 @@
             if (player.score !== originalScore || player.pointsThisTurn !== originalPointsThisTurn) {
                 renderScoreBoard(); // Re-render with potentially unchanged order but updated scores/button states
                 saveGameState();
-                updateExternalScoreboard(); // Send update with new scores
+                updateExternalScoreboard(); // <<< Send update with new scores (incl. isPlaying etc.)
                 if (player.score >= WIN_SCORE) {
                     endGame(player);
                 }
@@ -1262,12 +1268,10 @@
                      detailsRevealed: detailsRevealed,
                      gameIsOver: gameIsOver,
                      gameInProgress: gameInProgress,
-                     isPlaying: isPlaying,
+                     isPlaying: isPlaying, // <<< Save Spotify playback state
                      currentShotMessage: currentShotMessage,
-                     // ++ ADDED FOR VIDEO STATE ++
                      currentVideoIdForScoreboard: currentVideoIdForScoreboard,
                      shouldShowVideoOnScoreboard: shouldShowVideoOnScoreboard
-                     // ++ END VIDEO STATE ++
                  };
                  localStorage.setItem(GAME_STATE_KEY, JSON.stringify(stateToSave));
                  // console.log("Game state saved with PIN:", currentGamePIN); // Less verbose
@@ -1278,9 +1282,7 @@
             const savedStateJSON = localStorage.getItem(GAME_STATE_KEY);
             if (!savedStateJSON) {
                 gameInProgress = false; gameIsOver = false;
-                // ++ ADDED FOR VIDEO ++
-                currentVideoIdForScoreboard = null; shouldShowVideoOnScoreboard = false;
-                // ++ END VIDEO DATA ++
+                currentVideoIdForScoreboard = null; shouldShowVideoOnScoreboard = false; isPlaying = false;
                 return false;
             }
             try {
@@ -1306,12 +1308,10 @@
                 detailsRevealed = savedState.detailsRevealed || false;
                 gameIsOver = savedState.gameIsOver || false;
                 gameInProgress = savedState.gameInProgress || false;
-                isPlaying = savedState.isPlaying || false; // Load play/pause state
+                isPlaying = savedState.isPlaying || false; // <<< Load play/pause state
                 currentShotMessage = savedState.currentShotMessage || null;
-                // ++ ADDED FOR VIDEO STATE ++
                 currentVideoIdForScoreboard = savedState.currentVideoIdForScoreboard || null;
                 shouldShowVideoOnScoreboard = savedState.shouldShowVideoOnScoreboard || false;
-                // ++ END VIDEO STATE ++
 
                 renderPlayerList();
 
@@ -1328,7 +1328,7 @@
                 if (gameIsOver) {
                     console.log("Loaded state is Game Over.");
                     shouldShowVideoOnScoreboard = false; // Ensure video is off on game over load
-                    currentVideoIdForScoreboard = null;
+                    currentVideoIdForScoreboard = null; isPlaying = false; // Ensure isPlaying is false too
                     const winner = players.find(p => p.score >= WIN_SCORE);
                     if (winner) { endGameUIUpdate(winner); }
                     else {
@@ -1342,7 +1342,7 @@
                         if (el.winnerFace.dataset.objectUrl) { URL.revokeObjectURL(el.winnerFace.dataset.objectUrl); delete el.winnerFace.dataset.objectUrl; }
                     }
                     showPINStatus(currentGamePIN); // Show PIN even if game over
-                    updateExternalScoreboard(); // Send update ensuring video is off
+                    updateExternalScoreboard(); // Send update ensuring video is off, isPlaying false
                     return true;
                 } else if (gameInProgress) {
                     console.log("Loaded state is Game In Progress.");
@@ -1372,6 +1372,7 @@
                                 // Not revealed state, ensure video off and show PIN
                                 shouldShowVideoOnScoreboard = false;
                                 currentVideoIdForScoreboard = null;
+                                // Keep isPlaying as loaded, but update button
                                 showPINStatus(currentGamePIN); // Show PIN
                                 toggleVisibility(el.songDetails, false);
                                 toggleVisibility(el.scoreBoard, false);
@@ -1380,7 +1381,7 @@
                                 renderScoreBoard(); // Render board to show names/faces, but scores only
                                 updateExternalScoreboard(); // Send update ensuring video off
                             }
-                            updatePlayPauseButton(); // Reflect saved play/pause state
+                            updatePlayPauseButton(); // <<< Reflect saved play/pause state
                             toggleVisibility(el.playbackControls, true);
                         } else {
                              console.warn("Saved track index invalid, attempting next song.");
@@ -1399,7 +1400,7 @@
                     toggleVisibility(el.gameOver, false);
                     toggleVisibility(el.menuQuitItem, false);
                     shouldShowVideoOnScoreboard = false; // Ensure video is off
-                    currentVideoIdForScoreboard = null;
+                    currentVideoIdForScoreboard = null; isPlaying = false; // Ensure isPlaying false too
                     showPINStatus(currentGamePIN); // Show PIN for setup phase
                     // Make sure setup areas are visible if a device was selected
                     if(currentDeviceId) {
@@ -1412,7 +1413,7 @@
                          toggleVisibility(el.playerSetup, false);
                          toggleVisibility(el.playlistInputArea, false);
                     }
-                    updateExternalScoreboard(); // Send update ensuring video off
+                    updateExternalScoreboard(); // Send update ensuring video off, isPlaying false
                     return true;
                 }
             } catch (e) {
@@ -1468,10 +1469,10 @@
                  gameInProgress = true;
                  players.forEach(p => { p.score = 0; p.pointsThisTurn = 0; });
                  currentShotMessage = null;
-                 // ++ RESET VIDEO STATE FOR NEW GAME ++
+                 // RESET VIDEO STATE FOR NEW GAME
                  shouldShowVideoOnScoreboard = false;
                  currentVideoIdForScoreboard = null;
-                 // ++ END VIDEO STATE RESET ++
+                 // isPlaying will be set by playTrack
 
                  toggleVisibility(el.devSelector, false);
                  toggleVisibility(el.playerSetup, false);
@@ -1483,8 +1484,8 @@
                  renderPlayerList(); // Disable player add/remove/face buttons
                  renderScoreBoard(); // Render initial scoreboard (scores 0)
                  showPINStatus(currentGamePIN); // Ensure PIN is visible at start of game
-                 updateExternalScoreboard(); // Send initial state (players with 0 score, video off)
-                 saveGameState();
+                 // updateExternalScoreboard() will be called by playNextRandomSong after setting isPlaying
+                 saveGameState(); // Save initial game state (before first song starts)
                  await playNextRandomSong();
              } else {
                  showError("Kon playlist niet laden of playlist is leeg.");
@@ -1500,10 +1501,11 @@
              detailsRevealed = false;
              players.forEach(p => p.pointsThisTurn = 0);
              currentShotMessage = null;
-             // ++ RESET VIDEO STATE FOR NEW TURN ++
+             // RESET VIDEO STATE FOR NEW TURN
              shouldShowVideoOnScoreboard = false; // Hide video for new turn
              currentVideoIdForScoreboard = null;
-             // ++ END VIDEO STATE RESET ++
+             // isPlaying state remains from previous track until next track starts/stops
+
              toggleVisibility(el.songDetails, false);
              toggleVisibility(el.scoreBoard, false); // Hide scoreboard initially for new turn
              toggleVisibility(el.revealBtn, true);
@@ -1511,7 +1513,11 @@
              toggleVisibility(el.nextBtn, false);
              toggleVisibility(el.playbackControls, true);
              renderScoreBoard(); // Render but keep hidden until reveal
-             updateExternalScoreboard(); // Send updated scores and cleared shot/video message
+
+             // Update scoreboard BEFORE starting next song (hides video, resets shot message)
+             // isPlaying state reflects the end of the previous turn here
+             updateExternalScoreboard();
+
              if (currentGamePIN) showPINStatus(currentGamePIN); // Show PIN at start of turn if no other message
         }
 
@@ -1550,15 +1556,19 @@
              // Don't show scoreboard yet, show after reveal
              toggleVisibility(el.scoreBoard, false);
 
-             const started = await playTrack(currentTrack.uri);
+             const started = await playTrack(currentTrack.uri); // This updates `isPlaying` state
              if (started) {
-                 saveGameState(); // Save state with new track index (and video off state)
+                 saveGameState(); // Save state with new track index (and video off state, updated isPlaying)
+                 updateExternalScoreboard(); // Send update reflecting new song started (video off, isPlaying true)
              } else {
                  showError("Kon volgend nummer niet starten. Controleer apparaat/verbinding.");
+                 isPlaying = false; // Ensure isPlaying is false if start failed
+                 updatePlayPauseButton();
                  gameInProgress = true; // Keep game active state
                  currentTrack = null; // Clear current track as it failed
                  currentTrackIndex--; // Revert index
                  saveGameState();
+                 updateExternalScoreboard(); // Send update (isPlaying false)
                  if (currentGamePIN) showPINStatus(currentGamePIN); // Show PIN again
                  checkCanStartGame();
              }
@@ -1591,7 +1601,7 @@
 
              currentShotMessage = null; // Reset shot message before check
 
-             // ++ ADDED FOR VIDEO ++
+             // VIDEO handling
              if (!isRestoring) { // Only search for video if not just restoring state
                 let foundVideoId = await searchYouTubeVideo(details.artist, details.title);
                 currentVideoIdForScoreboard = foundVideoId; // Store found ID (or null)
@@ -1601,7 +1611,6 @@
                  // Restoring state: Video ID and show flag loaded by loadGameState()
                  console.log(`Restoring video state: ID=${currentVideoIdForScoreboard}, Show=${shouldShowVideoOnScoreboard}`);
              }
-             // ++ END VIDEO DATA ++
 
 
              if (!isRestoring) {
@@ -1617,8 +1626,8 @@
                     showInfo("Video speelt op scoreboard..."); // Indicate video is playing
                  }
                  // Update Firebase and save state AFTER determining messages/video
-                 updateExternalScoreboard(); // Send update with details revealed (and video state)
-                 saveGameState(); // Save state including video state
+                 updateExternalScoreboard(); // Send update with details revealed (and video state, isPlaying)
+                 saveGameState(); // Save state including video state, isPlaying
              } else {
                  // Restoring: Show shot message if it existed, or video status, or PIN
                  if(currentShotMessage) { showStatus(currentShotMessage, false, 'shot'); }
@@ -1650,17 +1659,25 @@
         async function endGame(winner) {
              if (gameIsOver) return;
              gameIsOver = true; gameInProgress = false; detailsRevealed = false;
-             // ++ RESET VIDEO STATE ON GAME END ++
+             // RESET VIDEO STATE ON GAME END
              shouldShowVideoOnScoreboard = false; // Hide video on game end
              currentVideoIdForScoreboard = null;
-             // ++ END VIDEO STATE RESET ++
+             // isPlaying state set below after attempting pause
+
              console.log(`Game Over! Winner: ${winner.name}`);
 
              // Stop playback
              if (isPlaying && accessToken && currentDeviceId) {
-                 try { await spotifyApiCall('/me/player/pause', 'PUT'); isPlaying = false; updatePlayPauseButton(); }
-                 catch(e){ console.warn("Failed to pause on game end:", e); }
+                 try {
+                     await spotifyApiCall('/me/player/pause', 'PUT');
+                     isPlaying = false; // Update state AFTER successful pause
+                     updatePlayPauseButton();
+                } catch(e){ console.warn("Failed to pause on game end:", e); /* isPlaying remains true if pause failed? Revisit if needed */ }
+             } else {
+                 isPlaying = false; // Ensure isPlaying is false if it wasn't playing
+                 updatePlayPauseButton();
              }
+
              // Play winner song (optional)
              if (accessToken && currentDeviceId && WINNER_SONG_URI) {
                  spotifyApiCall(`/me/player/play?device_id=${currentDeviceId}`, 'PUT', { uris: [WINNER_SONG_URI] })
@@ -1668,8 +1685,8 @@
              }
 
              endGameUIUpdate(winner); // Update UI including PIN status
-             updateExternalScoreboard(); // Send final state including winner, isGameOver: true, video: false
-             saveGameState(); // Save the final game over state (with video off)
+             updateExternalScoreboard(); // Send final state including winner, isGameOver: true, video: false, isPlaying: false
+             saveGameState(); // Save the final game over state (with video off, isPlaying false)
          }
         async function quitGame() {
              console.log("Quitting game / Resetting to setup...");
@@ -1677,28 +1694,33 @@
              showInfo("Spel gestopt. Stel opnieuw in.");
              document.querySelectorAll('[data-object-url]').forEach(el => { if (el.dataset.objectUrl && el.dataset.objectUrl.startsWith('blob:')) { try { URL.revokeObjectURL(el.dataset.objectUrl); } catch(e) { console.warn("Error revoking Object URL:", e, el.dataset.objectUrl); } } delete el.dataset.objectUrl; if(el.tagName === 'IMG') el.src = ''; else el.style.backgroundImage = ''; });
 
-             if (isPlaying && accessToken && currentDeviceId) {
-                 try { await spotifyApiCall('/me/player/pause', 'PUT'); } catch(e){ console.warn("Failed to pause on quit game:", e); }
+             // Stop playback first
+             let wasPlaying = isPlaying; // Store current state
+             isPlaying = false; // Assume it will be stopped
+             updatePlayPauseButton();
+             if (wasPlaying && accessToken && currentDeviceId) {
+                 try { await spotifyApiCall('/me/player/pause', 'PUT'); }
+                 catch(e){ console.warn("Failed to pause on quit game:", e); /* isPlaying already set to false */ }
              }
 
              // Signal scoreboard to hide video BEFORE removing Firebase data
              shouldShowVideoOnScoreboard = false;
              currentVideoIdForScoreboard = null;
-             updateExternalScoreboard(); // Send final update to hide video
+             updateExternalScoreboard(); // Send final update to hide video, reflect isPlaying=false
 
              // Remove game data from Firebase *under the current PIN*
              if (dbRef) { dbRef.remove().then(() => console.log(`Removed game data from Firebase at ${dbRef.toString()} (keeping PIN ${currentGamePIN})`)).catch(e => console.error(`Failed to remove game data from Firebase: ${e.message}`)); }
              else if (currentGamePIN) { firebase.database().ref(`${FIREBASE_ROOT_PATH}/${currentGamePIN}`).remove().then(() => console.log(`Removed game data from Firebase for PIN ${currentGamePIN} (without active ref)`)).catch(e => console.error(`Failed to remove game data for PIN ${currentGamePIN}: ${e.message}`)); }
 
              // Reset local state *except* PIN
-             playlistTracks = []; currentTrack = null; currentTrackIndex = -1; isPlaying = false; detailsRevealed = false; gameIsOver = false; gameInProgress = false; currentShotMessage = null;
+             playlistTracks = []; currentTrack = null; currentTrackIndex = -1; /* isPlaying already false */ detailsRevealed = false; gameIsOver = false; gameInProgress = false; currentShotMessage = null;
              // Video state already reset above
 
              // Clear players scores but keep players and faces
              players.forEach(p => { p.score = 0; p.pointsThisTurn = 0; });
 
-             saveGameState(); // Save the reset state (scores 0, game not in progress, video off) but keep PIN
-             console.log("Game state reset (scores cleared, keeping PIN, video off) and saved.");
+             saveGameState(); // Save the reset state (scores 0, game not in progress, video off, isPlaying false) but keep PIN
+             console.log("Game state reset (scores cleared, keeping PIN, video off, isPlaying false) and saved.");
 
              // Reset UI
              toggleVisibility(el.gameplayArea, false); toggleVisibility(el.gameOver, false); toggleVisibility(el.songDetails, false); toggleVisibility(el.scoreBoard, false); toggleVisibility(el.menuQuitItem, false); toggleVisibility(el.devSelector, true);
@@ -1720,21 +1742,22 @@
              // Signal scoreboard to hide video BEFORE potentially removing Firebase data
              shouldShowVideoOnScoreboard = false;
              currentVideoIdForScoreboard = null;
-             updateExternalScoreboard(); // Send update to ensure video is off
+             isPlaying = false; // Ensure playback state is false for new game setup
+             updateExternalScoreboard(); // Send update to ensure video is off, isPlaying false
 
              // Remove old game data from Firebase if ref exists and matches PIN
              if (dbRef && currentGamePIN && dbRef.toString().includes(currentGamePIN)) { dbRef.remove().then(() => console.log(`Removed previous game data from Firebase at ${dbRef.toString()} (keeping PIN ${currentGamePIN})`)).catch(e => console.error(`Failed to remove previous game data: ${e.message}`)); }
              else if (currentGamePIN) { firebase.database().ref(`${FIREBASE_ROOT_PATH}/${currentGamePIN}`).remove().then(() => console.log(`Removed previous game data for PIN ${currentGamePIN} (without active ref)`)).catch(e => console.error(`Failed to remove previous game data for PIN ${currentGamePIN}: ${e.message}`)); }
 
             // Reset state variables, *except* PIN
-            playlistTracks = []; currentTrack = null; currentTrackIndex = -1; isPlaying = false; detailsRevealed = false; gameIsOver = false; gameInProgress = false; currentShotMessage = null;
+            playlistTracks = []; currentTrack = null; currentTrackIndex = -1; /* isPlaying already false */ detailsRevealed = false; gameIsOver = false; gameInProgress = false; currentShotMessage = null;
             // Video state already reset above
 
             // Clear scores but keep players
             players.forEach(p => { p.score = 0; p.pointsThisTurn = 0; });
 
-            saveGameState(); // Save the reset state (scores 0, game not over, video off) but keep PIN
-            console.log("Game state reset for new game (scores cleared, keeping PIN, video off) and saved.");
+            saveGameState(); // Save the reset state (scores 0, game not over, video off, isPlaying false) but keep PIN
+            console.log("Game state reset for new game (scores cleared, keeping PIN, video off, isPlaying false) and saved.");
 
             // Reset UI
             toggleVisibility(el.gameplayArea, false); toggleVisibility(el.gameOver, false); toggleVisibility(el.songDetails, false); toggleVisibility(el.scoreBoard, false); toggleVisibility(el.menuQuitItem, false); toggleVisibility(el.devSelector, true);
@@ -1772,7 +1795,7 @@
 
              if (authenticated) {
                  initializeFirebase();
-                 const loadedFromState = await loadGameState();
+                 const loadedFromState = await loadGameState(); // This loads 'isPlaying' state too
 
                  // Logic to handle PIN and setup visibility after loading state
                  if (!loadedFromState && !currentGamePIN) { console.log("Auth successful, no game state loaded and no existing PIN. Fetching devices to potentially generate PIN."); }
@@ -1781,7 +1804,7 @@
                     if (!setFirebaseDbRef(currentGamePIN)) { showError("Kon Firebase niet instellen met bestaande PIN. Clearing PIN."); logoutCleanup(); updateUIAfterAuthCheck(false); return; }
                     console.log("Auth successful, no specific game state loaded, but reusing existing PIN:", currentGamePIN);
                     // Ensure video state is reset if reusing PIN without loaded game state
-                    shouldShowVideoOnScoreboard = false; currentVideoIdForScoreboard = null;
+                    shouldShowVideoOnScoreboard = false; currentVideoIdForScoreboard = null; isPlaying = false;
                     updateExternalScoreboard();
                     if(currentDeviceId) { toggleVisibility(el.devSelector, true); toggleVisibility(el.playerSetup, true); toggleVisibility(el.playlistInputArea, true); showPINStatus(currentGamePIN); }
                     else { toggleVisibility(el.devSelector, true); toggleVisibility(el.playerSetup, false); toggleVisibility(el.playlistInputArea, false); showInfo("Selecteer afspeelapparaat."); }
@@ -1794,6 +1817,7 @@
                   else if (!gameInProgress && !gameIsOver && currentGamePIN) { toggleVisibility(el.devSelector, true); toggleVisibility(el.playerSetup, true); toggleVisibility(el.playlistInputArea, true); if (!currentShotMessage && !detailsRevealed && !shouldShowVideoOnScoreboard) showPINStatus(currentGamePIN); }
                  checkCanStartGame();
                  toggleVisibility(el.menuQuitItem, gameInProgress && !gameIsOver);
+                 updatePlayPauseButton(); // Update button based on loaded isPlaying state
              } else { showStatus("Verbind met Spotify om door te gaan"); }
              return authenticated;
         }
@@ -1803,9 +1827,8 @@
             localStorage.removeItem(TOKEN_STORAGE_KEY); localStorage.removeItem(GAME_STATE_KEY);
             document.querySelectorAll('[data-object-url]').forEach(element => { if (element.dataset.objectUrl && element.dataset.objectUrl.startsWith('blob:')) { try { URL.revokeObjectURL(element.dataset.objectUrl); } catch(e) { console.warn("Error revoking Object URL on logout:", e); } } delete element.dataset.objectUrl; if(element.tagName === 'IMG') element.src = ''; else element.style.backgroundImage = ''; });
             players = []; playlistTracks = []; currentTrack = null; currentTrackIndex = -1; isPlaying = false; detailsRevealed = false; gameIsOver = false; gameInProgress = false; currentDeviceId = null; currentShotMessage = null;
-            // ++ RESET VIDEO STATE ON CLEANUP ++
+            // RESET VIDEO STATE ON CLEANUP
             shouldShowVideoOnScoreboard = false; currentVideoIdForScoreboard = null;
-            // ++ END VIDEO STATE RESET ++
             console.log("Cleaned up tokens, PIN, game state, and variables.");
         }
         function updateUIAfterAuthCheck(isAuthenticated) {
@@ -1814,13 +1837,19 @@
         }
         async function logout() {
             console.log("User logging out...");
-            if (isPlaying && accessToken && currentDeviceId) { try { await spotifyApiCall('/me/player/pause', 'PUT'); } catch (e) { console.warn("Failed to pause playback on logout:", e); } }
+            let wasPlaying = isPlaying; // Store state before trying to pause
+            isPlaying = false; // Assume stopped
+            updatePlayPauseButton();
+            if (wasPlaying && accessToken && currentDeviceId) {
+                try { await spotifyApiCall('/me/player/pause', 'PUT'); }
+                catch (e) { console.warn("Failed to pause playback on logout:", e); }
+            }
 
              // Signal scoreboard to hide video BEFORE removing Firebase data
              shouldShowVideoOnScoreboard = false;
              currentVideoIdForScoreboard = null;
              if (currentGamePIN && setFirebaseDbRef(currentGamePIN)) { // Ensure ref is set before update
-                updateExternalScoreboard();
+                updateExternalScoreboard(); // Sends isPlaying: false, showVideo: false
              } else {
                 console.warn("Cannot send final 'hide video' update on logout - PIN/Ref missing.");
              }
@@ -1829,7 +1858,7 @@
              if (dbRef) { dbRef.remove().then(() => console.log(`Removed game data from Firebase at ${dbRef.toString()} during logout`)).catch(e => console.error(`Failed to remove game data on logout: ${e.message}`)); }
              else if (currentGamePIN) { firebase.database().ref(`${FIREBASE_ROOT_PATH}/${currentGamePIN}`).remove().catch(e => console.error(`Failed to remove game data via path on logout: ${e.message}`)); }
 
-            logoutCleanup(); // Clears tokens, PIN, state etc. (also resets video state vars)
+            logoutCleanup(); // Clears tokens, PIN, state etc. (also resets video state vars and sets isPlaying false)
             updateUIAfterAuthCheck(false); // Update UI to logged-out state
             showInfo("Succesvol uitgelogd.");
             if (el.collapsibleMenu && !el.collapsibleMenu.classList.contains('hidden')) { toggleMenu(); }
@@ -1862,7 +1891,7 @@
             el.refreshDevBtn?.addEventListener('click', getSpotifyDevices);
             el.devList?.addEventListener('change', async () => { // Make async
                 const previousDeviceId = currentDeviceId; currentDeviceId = el.devList.value || null; const showSetupSteps = !!currentDeviceId;
-                if (!gameInProgress) { if (currentDeviceId && !currentGamePIN) { currentGamePIN = generatePIN(); if (!setFirebaseDbRef(currentGamePIN)) { showError("Kon Firebase niet instellen voor nieuw spel PIN. Probeer opnieuw."); currentDeviceId = null; el.devList.value = ""; return; } console.log("Generated new PIN:", currentGamePIN); showPINStatus(currentGamePIN); saveGameState(); } else if (currentDeviceId && currentGamePIN) { if (!setFirebaseDbRef(currentGamePIN)) { showError("Kon Firebase niet instellen met bestaande PIN."); } else { showPINStatus(currentGamePIN); } } else { showInfo("Selecteer een geldig afspeelapparaat."); } toggleVisibility(el.playerSetup, showSetupSteps && !!currentGamePIN); toggleVisibility(el.playlistInputArea, showSetupSteps && !!currentGamePIN); } checkCanStartGame(); if (currentDeviceId !== previousDeviceId) { saveGameState(); } });
+                if (!gameInProgress) { if (currentDeviceId && !currentGamePIN) { currentGamePIN = generatePIN(); if (!setFirebaseDbRef(currentGamePIN)) { showError("Kon Firebase niet instellen voor nieuw spel PIN. Probeer opnieuw."); currentDeviceId = null; el.devList.value = ""; return; } console.log("Generated new PIN:", currentGamePIN); showPINStatus(currentGamePIN); saveGameState(); } else if (currentDeviceId && currentGamePIN) { if (!setFirebaseDbRef(currentGamePIN)) { showError("Kon Firebase niet instellen met bestaande PIN."); } else { showPINStatus(currentGamePIN); } } else { showInfo("Selecteer een geldig afspeelapparaat."); } toggleVisibility(el.playerSetup, showSetupSteps && !!currentGamePIN); toggleVisibility(el.playlistInputArea, showSetupSteps && !!currentGamePIN); } checkCanStartGame(); if (currentDeviceId !== previousDeviceId) { saveGameState(); updateExternalScoreboard(); } }); // Update FB on device change too
             el.addPlayerBtn?.addEventListener('click', addPlayer);
             el.playerNameInput?.addEventListener('keypress', (e) => { if (e.key === 'Enter') addPlayer(); });
             el.playerList?.addEventListener('click', (e) => { const removeButton = e.target.closest('.remove-player-btn'); if (removeButton && !removeButton.disabled) { removePlayer(removeButton.dataset.playerId); return; } const faceControl = e.target.closest('.player-face-control'); if (faceControl && !faceControl.disabled && !gameInProgress) { currentTargetPlayerId = faceControl.dataset.playerId; console.log(`Opening image upload for player ${currentTargetPlayerId}`); el.imageUploadInput?.click(); return; } const captureButton = e.target.closest('.capture-photo-btn'); if (captureButton && !captureButton.disabled && !gameInProgress) { const playerId = captureButton.dataset.playerId; console.log(`Opening camera capture for player ${playerId}`); openCaptureModal(playerId); return; } });
