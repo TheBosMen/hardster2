@@ -1,0 +1,873 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hardster Scoreboard</title>
+    <style>
+        /* Basic styles for TV display - customize as needed */
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Roboto:wght@300;400&display=swap');
+
+        :root {
+            --primary: #ff6600; /* Orange */
+            --secondary: #00ccff; /* Cyan */
+            --bg-dark: #0a0a0a;
+            --bg-light: #1a1a1a; /* Used for inputs */
+            --text: #ffffff;
+            --success: #33cc33; /* Green */
+            --danger: #ff3355; /* Red */
+        }
+
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden; /* Prevent scrollbars */
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text);
+            font-family: 'Roboto', sans-serif;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh; /* Ensure full height */
+            text-align: center;
+            padding: 3vh 3vw; /* Use viewport units for padding */
+            box-sizing: border-box;
+            position: relative; /* Needed for absolute positioning of video */
+        }
+
+        /* PIN Input Area Styles */
+        #pin-entry-area {
+            width: 90%;
+            max-width: 400px;
+            background-color: rgba(26, 26, 26, 0.9);
+            padding: 30px;
+            border-radius: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            text-align: center;
+            z-index: 10; /* Ensure PIN entry is above potential video */
+            position: relative;
+            transition: opacity 0.5s ease, visibility 0s linear 0.5s; /* Fade out */
+        }
+        #pin-entry-area.hidden {
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.5s ease, visibility 0s linear 0.5s;
+        }
+        #pin-entry-area label {
+            display: block;
+            color: var(--secondary);
+            font-size: 1.2em;
+            margin-bottom: 15px;
+        }
+        #pin-input {
+             background-color: var(--bg-light);
+             color: white;
+             border: 1px solid var(--secondary);
+             padding: 15px;
+             border-radius: 8px;
+             width: 100%;
+             margin-bottom: 20px;
+             font-size: 1.5em; /* Larger font for PIN */
+             text-align: center;
+             letter-spacing: 5px; /* Space out digits */
+             font-family: 'Orbitron', sans-serif; /* Match score font */
+             outline: none;
+             box-sizing: border-box;
+        }
+        /* Style for number input appearance */
+        #pin-input[type=number]::-webkit-inner-spin-button,
+        #pin-input[type=number]::-webkit-outer-spin-button {
+          -webkit-appearance: none;
+          margin: 0;
+        }
+        #pin-input[type=number] {
+          -moz-appearance: textfield; /* Firefox */
+        }
+
+        #load-scoreboard-btn {
+             background: linear-gradient(135deg, var(--primary), var(--secondary));
+             color: white;
+             border: none;
+             padding: 14px 28px;
+             border-radius: 30px;
+             font-size: 1em;
+             font-weight: bold;
+             cursor: pointer;
+             transition: all 0.3s ease;
+             text-transform: uppercase;
+             letter-spacing: 1px;
+             box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+             width: 100%;
+        }
+        #load-scoreboard-btn:hover:not(:disabled) {
+            transform: translateY(-3px);
+            box-shadow: 0 7px 20px rgba(0, 0, 0, 0.4);
+        }
+        #load-scoreboard-btn:disabled {
+             background: linear-gradient(135deg, #555, #777);
+             cursor: not-allowed; opacity: 0.6; transform: none;
+        }
+        #pin-error-message {
+            color: var(--danger);
+            margin-top: 15px;
+            font-weight: bold;
+            min-height: 1.2em; /* Reserve space */
+        }
+
+
+        /* Scoreboard Content Area Styles */
+        #scoreboard-content {
+            width: 95%;
+            max-width: 1000px;
+            background-color: rgba(26, 26, 26, 0.9);
+            padding: 3vh 3vw; /* Reduced padding slightly */
+            border-radius: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            max-height: 90vh; /* Limit height */
+            z-index: 10; /* Above video by default */
+            position: relative;
+            opacity: 1;
+            visibility: visible;
+            transition: opacity 0.5s ease, visibility 0s linear 0s; /* Fade in/out */
+        }
+        #scoreboard-content.hidden {
+            /* Use opacity/visibility for transitions */
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.5s ease, visibility 0s linear 0.5s;
+        }
+        h1 {
+            font-family: 'Orbitron', sans-serif;
+            color: var(--primary);
+            font-size: clamp(2.2em, 5vw, 4em); /* Adjusted font size */
+            margin-bottom: 2vh; /* Reduced margin */
+            text-transform: uppercase;
+            letter-spacing: 2px;
+             background: linear-gradient(90deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            width: 100%;
+        }
+
+        /* Current PIN Display */
+        #current-pin-display {
+            font-size: clamp(0.8em, 1.5vw, 1em);
+            color: rgba(255, 255, 255, 0.6);
+            margin-bottom: 2vh;
+        }
+        #current-pin-display span {
+             font-weight: bold;
+             color: var(--secondary);
+             margin-left: 5px;
+        }
+
+        /* Shot Message Styling (OLD - REMOVED from scoreboard-content) */
+        /* #shot-message-display { ... } */
+
+        /* NEW Overlay Shot Message Styling */
+        #overlay-shot-message {
+            position: fixed;
+            top: 3vh; /* Position from top */
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 100; /* High z-index to be above video */
+            background-color: rgba(255, 102, 0, 0.85); /* More opaque background */
+            color: white; /* White text for better contrast */
+            border: 2px solid var(--primary);
+            border-radius: 10px;
+            padding: 15px 30px;
+            font-size: clamp(1.5em, 4vw, 2.5em); /* Prominent font size */
+            font-weight: bold;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.4);
+            max-width: 80%;
+            opacity: 1;
+            visibility: visible;
+            transition: opacity 0.4s ease, visibility 0s linear 0s;
+        }
+        #overlay-shot-message.hidden {
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.4s ease, visibility 0s linear 0.4s;
+        }
+
+
+        /* Score Columns Container */
+        #score-columns-container {
+            display: flex;
+            justify-content: space-around; /* Distribute space between columns */
+            width: 100%;
+            gap: 3vw; /* Gap between columns */
+            margin-bottom: 3vh; /* Space below scores */
+        }
+        #score-columns-container.hidden { display: none; } /* Hide container if needed */
+
+        /* Individual Score Column */
+        .score-column {
+             width: 48%; /* Each column takes slightly less than half */
+             list-style: none;
+             padding: 0;
+             margin: 0;
+        }
+
+        /* Score List Item */
+        li.player-item {
+            display: flex;
+            /* justify-content: space-between; <-- Removed, handled by inner elements */
+            align-items: center;
+            font-size: clamp(1.8em, 4vw, 3em); /* <<< INCREASED FONT SIZE */
+            padding: 12px 5px; /* Adjusted padding slightly */
+            border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+            color: var(--text);
+        }
+         li.player-item:last-child {
+             border-bottom: none;
+         }
+
+        /* Player Face in Scoreboard - Significantly larger */
+        .player-face-img {
+            width: 100px; /* <<< INCREASED SIZE */
+            height: 100px; /* <<< INCREASED SIZE */
+            border-radius: 50%;
+            margin-right: 20px; /* <<< INCREASED SPACE */
+            flex-shrink: 0;
+            background-color: var(--bg-light); /* Placeholder bg */
+            border: 3px solid var(--secondary); /* <<< INCREASED BORDER */
+            background-size: cover;
+            background-position: center;
+            display: inline-block;
+             /* Default Icon */
+             background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23cccccc"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>');
+             background-repeat: no-repeat;
+             background-size: 70%; /* Adjusted SVG icon size */
+             object-fit: cover; /* Ensure loaded images cover the area */
+        }
+
+        .player-info-wrapper {
+             display: flex;
+             align-items: center;
+             flex-grow: 1; /* Takes up space pushing score to the right */
+             overflow: hidden; /* Prevents long names from breaking layout */
+             min-width: 0; /* Important for flex item overflow */
+        }
+
+        .player-name {
+            color: var(--secondary);
+            text-align: left;
+            margin-right: 20px; /* <<< INCREASED SPACE */
+            font-weight: 400;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            flex-shrink: 1; /* Allow name to shrink if needed */
+        }
+        .player-score {
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 700;
+            min-width: 80px; /* <<< INCREASED MIN-WIDTH */
+            text-align: right;
+            color: var(--primary);
+            flex-shrink: 0; /* Prevent score from shrinking */
+        }
+
+        /* Winner Display - Adjusted for 16:9 */
+        #winner-display {
+            font-family: 'Orbitron', sans-serif;
+            font-size: clamp(2.5em, 6vw, 4.5em); /* <<< INCREASED FONT */
+            color: var(--success);
+            margin-top: 4vh; /* Adjusted margin */
+            font-weight: bold;
+            line-height: 1.3;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2vh; /* Adjusted gap */
+        }
+        #winner-display.hidden { display: none; }
+
+        /* Winner Face Image - Larger */
+        #winner-face-img {
+             width: clamp(150px, 25vw, 250px); /* <<< INCREASED SIZE */
+             height: clamp(150px, 25vw, 250px); /* <<< INCREASED SIZE */
+             border-radius: 50%;
+             border: 5px solid var(--success); /* <<< INCREASED BORDER */
+             background-color: var(--bg-light); /* Placeholder */
+             background-size: cover;
+             background-position: center;
+             /* Default Icon (Optional, if no image loads) */
+             background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23cccccc"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>');
+             background-repeat: no-repeat;
+             background-size: 70%; /* Adjusted SVG size */
+             object-fit: cover; /* Ensure loaded image covers */
+        }
+        #winner-face-img.hidden { display: none; }
+
+         #winner-text {
+             text-align: center;
+         }
+         #winner-name-text {
+              display: block;
+              margin-bottom: 5px;
+              color: var(--success); /* Ensure winner name is green */
+         }
+         #winner-reward-text {
+              font-size: 0.6em; /* Relative to winner name size */
+              font-weight: normal;
+              color: var(--text); /* White reward text */
+              display: block;
+         }
+
+        #status-message {
+            font-size: clamp(1.2em, 2.5vw, 1.8em); /* Adjusted font size */
+            color: rgba(255, 255, 255, 0.7);
+            width: 100%;
+            text-align: center;
+            padding: 20px 0;
+            /* Displayed within the main content area */
+            margin-top: 2vh;
+        }
+        #status-message.hidden { display: none; }
+
+        /* ++ VIDEO STYLES ++ */
+        #video-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.95); /* Darker overlay */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 50; /* Above scoreboard content, below overlay shot message */
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.6s ease-in-out, visibility 0s linear 0.6s;
+        }
+        #video-container.visible {
+            opacity: 1;
+            visibility: visible;
+            transition: opacity 0.6s ease-in-out, visibility 0s linear 0s;
+            /* z-index remains 50 */
+        }
+        #youtube-player {
+            width: 80vw; /* Adjust size as needed */
+            height: 45vw; /* Maintain 16:9 aspect ratio */
+            max-width: 1280px;
+            max-height: 720px;
+            border: 2px solid var(--secondary);
+            box-shadow: 0 0 30px rgba(0, 204, 255, 0.5);
+        }
+        /* ++ END VIDEO STYLES ++ */
+
+        /* Generic hidden utility class */
+        .hidden {
+            display: none !important;
+        }
+        /* Override for elements controlled by opacity/visibility */
+        #scoreboard-content.hidden,
+        #pin-entry-area.hidden,
+        #overlay-shot-message.hidden { /* Added overlay shot message here */
+            display: flex !important; /* Keep in layout for opacity transition */
+            opacity: 0 !important;
+            visibility: hidden !important;
+        }
+        /* Ensure overlay shot message uses flex if needed by its content */
+         #overlay-shot-message { display: inline-block !important; } /* Or block, depending on desired content flow */
+         #overlay-shot-message.hidden { display: inline-block !important; opacity: 0 !important; visibility: hidden !important; }
+
+
+        #video-container.visible {
+             display: flex !important; /* Ensure it shows when visible class is added */
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- PIN Entry Area (Shown Initially) -->
+    <div id="pin-entry-area">
+        <label for="pin-input">Enter Game PIN:</label>
+        <input type="number" id="pin-input" pattern="\d{4}" title="4-digit PIN" maxlength="4" inputmode="numeric">
+        <button id="load-scoreboard-btn">Load Scoreboard</button>
+        <div id="pin-error-message"></div>
+    </div>
+
+    <!-- NEW Overlay Shot Message (Starts Hidden) -->
+    <div id="overlay-shot-message" class="hidden"></div>
+
+    <!-- Scoreboard Content Area (Hidden Initially) -->
+    <div id="scoreboard-content" class="hidden"> <!-- Start hidden -->
+        <h1>Hardster Scores</h1>
+        <div id="current-pin-display" class="hidden">Viewing PIN: <span id="viewing-pin"></span></div>
+
+        <!-- OLD Shot Message Area (REMOVED) -->
+        <!-- <div id="shot-message-display" class="hidden"></div> -->
+
+        <!-- Score Columns Container -->
+        <div id="score-columns-container" class="hidden"> <!-- Start hidden -->
+            <ul id="score-column-1" class="score-column">
+                <!-- Player items added dynamically -->
+            </ul>
+            <ul id="score-column-2" class="score-column">
+                <!-- Player items added dynamically -->
+            </ul>
+        </div>
+
+         <!-- Status message -->
+         <div id="status-message" class="hidden">Connecting...</div>
+
+
+        <!-- Winner Display Area -->
+        <div id="winner-display" class="hidden"> <!-- Start hidden -->
+            <img id="winner-face-img" src="" alt="Winner Face" class="hidden"> <!-- Use <img> tag -->
+            <div id="winner-text">
+                 <span id="winner-name-text"></span>
+                 <span id="winner-reward-text"></span>
+            </div>
+        </div>
+    </div>
+
+    <!-- ++ VIDEO CONTAINER ++ -->
+    <div id="video-container"> <!-- Starts hidden via CSS (opacity/visibility) -->
+        <div id="youtube-player"></div>
+    </div>
+    <!-- ++ END VIDEO CONTAINER ++ -->
+
+
+    <!-- Firebase SDKs (v8) -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+
+    <!-- ++ YOUTUBE API ++ -->
+    <script src="https://www.youtube.com/iframe_api"></script>
+
+    <script>
+        // --- Firebase Configuration ---
+        const firebaseConfig = {
+          apiKey: "AIzaSyD0nnCDuG_4ymWoWk5AKYaXwnl4nWkVi9s", // YOUR CONFIG
+          authDomain: "hardster-7e2c5.firebaseapp.com",
+          databaseURL: "https://hardster-7e2c5-default-rtdb.europe-west1.firebasedatabase.app",
+          projectId: "hardster-7e2c5",
+          storageBucket: "hardster-7e2c5.appspot.com",
+          messagingSenderId: "667886748380",
+          appId: "1:667886748380:web:38b2c60e14158d16ae2a19",
+        };
+        const FIREBASE_ROOT_PATH = 'hardster/games'; // Same path as index.html
+        const MAX_DISPLAY_PLAYERS = 8; // Max players to show in columns
+
+        // --- DOM Elements ---
+        const pinEntryArea = document.getElementById('pin-entry-area');
+        const pinInput = document.getElementById('pin-input');
+        const loadButton = document.getElementById('load-scoreboard-btn');
+        const pinErrorMessage = document.getElementById('pin-error-message');
+        const scoreboardContent = document.getElementById('scoreboard-content');
+        const viewingPinEl = document.getElementById('viewing-pin');
+        const currentPinDisplay = document.getElementById('current-pin-display');
+        const overlayShotMessageEl = document.getElementById('overlay-shot-message'); // <<< NEW
+        const scoreColumnsContainer = document.getElementById('score-columns-container');
+        const scoreColumn1 = document.getElementById('score-column-1');
+        const scoreColumn2 = document.getElementById('score-column-2');
+        const statusMessageEl = document.getElementById('status-message');
+        const winnerDisplayEl = document.getElementById('winner-display');
+        const winnerNameTextEl = document.getElementById('winner-name-text');
+        const winnerRewardTextEl = document.getElementById('winner-reward-text');
+        const winnerFaceImgEl = document.getElementById('winner-face-img'); // Now an <img> tag
+        // VIDEO ELEMENTS
+        const videoContainer = document.getElementById('video-container');
+        const youtubePlayerDiv = document.getElementById('youtube-player');
+
+        // --- State ---
+        let firebaseApp;
+        let dbRef = null;
+        let currentPIN = null;
+        let listenerAttached = false;
+        let youtubePlayer = null;
+        // Keep track of the last known state from Firebase to avoid unnecessary actions
+        let lastReceivedState = {
+            videoId: null,
+            show: false,
+            isPlaying: false, // Spotify playback state
+            shotMessage: null
+        };
+        let isVideoCurrentlyVisible = false; // Track if the video container IS currently visible
+
+        // --- Firebase Initialization ---
+        try {
+            firebaseApp = firebase.initializeApp(firebaseConfig);
+            console.log("Firebase app initialized for scoreboard display.");
+        } catch (e) {
+            console.error("Firebase initialization failed:", e);
+            pinErrorMessage.textContent = 'Error connecting to Firebase service.';
+            loadButton.disabled = true;
+        }
+
+        // --- YouTube Player API ---
+        function onYouTubeIframeAPIReady() {
+            console.log("YouTube IFrame API Ready");
+            try {
+                youtubePlayer = new YT.Player('youtube-player', {
+                    height: '100%',
+                    width: '100%',
+                    playerVars: {
+                        'playsinline': 1,
+                        'autoplay': 1,
+                        'controls': 0,          // Hide controls
+                        'modestbranding': 1,    // Less YouTube logo (still may show small watermark on hover)
+                        'rel': 0,               // Don't show related videos
+                        'iv_load_policy': 3,    // Don't show annotations
+                        'showinfo': 0           // Deprecated, but include for older players (intended to hide title)
+                    },
+                    events: {
+                        'onReady': onPlayerReady,
+                        'onStateChange': onPlayerStateChange,
+                        'onError': onPlayerError
+                    }
+                });
+            } catch (e) {
+                console.error("Error creating YouTube player:", e);
+                statusMessageEl.textContent = "Error initializing video player.";
+                statusMessageEl.classList.remove('hidden');
+            }
+        }
+
+        function onPlayerReady(event) {
+            console.log("YouTube Player Ready");
+            event.target.mute();
+            console.log("Player muted.");
+
+            // Check if Firebase *already* told us to show a video before player was ready
+            if (lastReceivedState.show && lastReceivedState.videoId) {
+                 console.log("Player ready, loading video based on last received state:", lastReceivedState.videoId);
+                 loadAndPlayVideo(lastReceivedState.videoId);
+                 // Also sync pause/play state immediately if needed
+                 syncVideoPlaybackState(lastReceivedState.isPlaying);
+            }
+        }
+
+        function onPlayerStateChange(event) {
+             if (event.data === YT.PlayerState.PLAYING) {
+                 // Ensure it's muted when it starts playing
+                 if (youtubePlayer && typeof youtubePlayer.mute === 'function' && !youtubePlayer.isMuted()) {
+                     youtubePlayer.mute();
+                     console.log("Re-muted player on state change to PLAYING.");
+                 }
+             } else if (event.data === YT.PlayerState.ENDED) {
+                console.log("Video finished playing.");
+                // Consider hiding or doing something else. Currently does nothing.
+             }
+        }
+
+        function onPlayerError(event) {
+            console.error("YouTube Player Error:", event.data);
+            // Hide the player on error
+            hideVideo();
+            statusMessageEl.textContent = `Video Error (${event.data}). Scoreboard shown.`;
+            statusMessageEl.classList.remove('hidden');
+            scoreboardContent.classList.remove('hidden'); // Ensure scoreboard is visible
+        }
+
+        function loadAndPlayVideo(videoId) {
+            if (youtubePlayer && typeof youtubePlayer.loadVideoById === 'function') {
+                // Only load if the video ID is different or if the container wasn't visible before
+                if (lastReceivedState.videoId !== videoId || !isVideoCurrentlyVisible) {
+                    console.log(`Showing video container and loading video: ${videoId}`);
+                    scoreboardContent.classList.add('hidden'); // Hide scoreboard content
+                    videoContainer.classList.add('visible'); // Start fading in video overlay
+                    isVideoCurrentlyVisible = true;
+                    youtubePlayer.loadVideoById(videoId); // API call to load video
+                    // Autoplay is set to 1 in playerVars, Muting handled in onReady/onStateChange
+                } else {
+                    console.log("Video ID is the same and container already visible. Ensuring playback state.");
+                    // If ID is same, just ensure playback state matches
+                    syncVideoPlaybackState(lastReceivedState.isPlaying);
+                }
+            } else {
+                 console.warn("YouTube player not ready or invalid, cannot load video.");
+                 // Ensure scoreboard is visible if video can't load/play
+                 scoreboardContent.classList.remove('hidden');
+                 hideVideo(); // Ensure video container is hidden
+            }
+        }
+
+        function hideVideo() {
+            if (isVideoCurrentlyVisible) { // Only act if it IS currently visible
+                console.log("Hiding video player.");
+                videoContainer.classList.remove('visible'); // Fade out video overlay
+                isVideoCurrentlyVisible = false;
+                if (youtubePlayer && typeof youtubePlayer.stopVideo === 'function') {
+                    // Stop video playback after fade out starts
+                     setTimeout(() => { // Delay stop slightly to allow fade
+                        if (!isVideoCurrentlyVisible) { // Double check it should still be hidden
+                            youtubePlayer.stopVideo();
+                            console.log("Video stopped.");
+                        }
+                     }, 600); // Matches CSS transition duration
+                }
+                // Ensure scoreboard content becomes visible again
+                scoreboardContent.classList.remove('hidden');
+            }
+             // Clear the video state tracking locally when hiding
+            // lastReceivedState.videoId = null; // Keep last video ID in case of quick toggle? Maybe not needed.
+            // lastReceivedState.show = false; // Reflect the intended state
+        }
+
+        // NEW function to sync YouTube play/pause with Spotify state
+        function syncVideoPlaybackState(shouldBePlaying) {
+             if (youtubePlayer && isVideoCurrentlyVisible) { // Only control if player exists and video IS visible
+                 const playerState = youtubePlayer.getPlayerState();
+                 // YT.PlayerState: 1 (playing), 2 (paused)
+                 if (shouldBePlaying && playerState !== YT.PlayerState.PLAYING && playerState !== YT.PlayerState.BUFFERING) {
+                     console.log("Sync: Telling YouTube player to PLAY");
+                     youtubePlayer.playVideo();
+                 } else if (!shouldBePlaying && playerState === YT.PlayerState.PLAYING) {
+                     console.log("Sync: Telling YouTube player to PAUSE");
+                     youtubePlayer.pauseVideo();
+                 }
+             }
+        }
+        // --- END YouTube ---
+
+
+        // --- Event Listeners ---
+        loadButton.addEventListener('click', handleLoadScoreboard);
+        pinInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') { handleLoadScoreboard(); }
+            if (!/\d/.test(e.key) && e.key !== 'Backspace' && e.key !== 'Delete' && e.key !== 'ArrowLeft' && e.key !== 'ArrowRight' && e.key !== 'Tab') { e.preventDefault(); }
+        });
+        pinInput.addEventListener('input', () => {
+            pinErrorMessage.textContent = ''; // Clear error on input
+            if (pinInput.value.length > 4) { pinInput.value = pinInput.value.slice(0, 4); }
+            loadButton.disabled = pinInput.value.length !== 4;
+        });
+
+
+        // --- Functions ---
+        function handleLoadScoreboard() {
+            const enteredPin = pinInput.value.trim();
+            if (enteredPin.length !== 4 || !/^\d{4}$/.test(enteredPin)) {
+                pinErrorMessage.textContent = 'Please enter a valid 4-digit PIN.';
+                return;
+            }
+            if (!firebaseApp) { pinErrorMessage.textContent = 'Firebase connection failed. Cannot load.'; return; }
+
+            pinErrorMessage.textContent = ''; loadButton.disabled = true; loadButton.textContent = 'Loading...';
+
+            // Detach previous listener if any
+            if (dbRef && listenerAttached) { dbRef.off('value'); listenerAttached = false; console.log("Detached previous Firebase listener."); }
+
+            currentPIN = enteredPin;
+            try {
+                 dbRef = firebase.database().ref(`${FIREBASE_ROOT_PATH}/${currentPIN}`);
+                 console.log("Attempting to listen at:", dbRef.toString());
+                 listenForUpdates(); // Attach listener to the new ref
+
+                 pinEntryArea.classList.add('hidden'); // Hide PIN entry
+                 scoreboardContent.classList.remove('hidden'); // Show scoreboard area (initially empty/loading)
+                 statusMessageEl.textContent = 'Loading scores...'; statusMessageEl.classList.remove('hidden');
+                 scoreColumnsContainer.classList.add('hidden'); // Hide columns until data loads
+                 winnerDisplayEl.classList.add('hidden');
+                 overlayShotMessageEl.classList.add('hidden'); // Hide overlay message
+                 viewingPinEl.textContent = currentPIN; currentPinDisplay.classList.remove('hidden');
+                 hideVideo(); // Ensure video is hidden when loading new PIN
+
+             } catch(e) {
+                 console.error("Error setting Firebase path or attaching listener:", e);
+                 pinErrorMessage.textContent = 'Error accessing game data. Check PIN?';
+                 loadButton.disabled = false; loadButton.textContent = 'Load Scoreboard';
+                 scoreboardContent.classList.add('hidden'); pinEntryArea.classList.remove('hidden'); // Show PIN entry again
+                 hideVideo(); // Ensure video hidden on error too
+             }
+        }
+
+
+        function listenForUpdates() {
+            if (!dbRef) return;
+            listenerAttached = true; // Mark listener as active
+
+            dbRef.on('value', (snapshot) => {
+                const data = snapshot.val();
+                // console.log("Received update:", data); // Keep logging updates
+                updateDisplay(data); // Update display based on new data
+
+                // Reset loading button state (might have been disabled during PIN entry)
+                loadButton.textContent = 'Load Scoreboard';
+                loadButton.disabled = pinInput.value.length !== 4;
+
+            }, (error) => {
+                console.error("Firebase read failed:", error);
+                scoreColumn1.innerHTML = ''; scoreColumn2.innerHTML = ''; // Clear scores
+                winnerDisplayEl.classList.add('hidden');
+                overlayShotMessageEl.classList.add('hidden'); // Hide overlay message
+                statusMessageEl.textContent = `Error loading scores for PIN ${currentPIN}. Is the game active or PIN correct?`;
+                statusMessageEl.classList.remove('hidden');
+                scoreColumnsContainer.classList.add('hidden'); // Hide columns on error
+                scoreboardContent.classList.remove('hidden'); // Ensure scoreboard area is visible to show error
+                hideVideo(); // Hide video on error
+                listenerAttached = false; // Listener failed
+
+                // Optionally allow user to try again or enter new PIN
+                pinEntryArea.classList.remove('hidden');
+                loadButton.disabled = false; // Re-enable button
+            });
+        }
+
+        // --- Update Display Function ---
+        function updateDisplay(data) {
+            // --- Process data from Firebase ---
+            const incomingState = {
+                videoId: data?.currentVideoId || null,
+                show: data?.showVideo === true,
+                isPlaying: data?.isPlaying === true, // Default to false if undefined/null
+                shotMessage: data?.shotMessage || null,
+                isGameOver: data?.isGameOver === true,
+                players: data?.players || [],
+                winnerName: data?.winnerName || null,
+                winnerFaceDataUrl: data?.winnerFaceDataUrl || null
+            };
+            // console.log("Incoming State:", incomingState);
+            // console.log("Last Received State:", lastReceivedState);
+            // console.log("Is Video Currently Visible:", isVideoCurrentlyVisible);
+
+
+            // --- Handle Overlay Shot Message FIRST (Always visible if present) ---
+            if (incomingState.shotMessage && !incomingState.isGameOver) { // Don't show shot message if game is over
+                overlayShotMessageEl.textContent = incomingState.shotMessage;
+                overlayShotMessageEl.classList.remove('hidden');
+            } else {
+                overlayShotMessageEl.classList.add('hidden');
+            }
+
+
+            // --- Handle Video Show/Hide ---
+            const shouldShowVideo = incomingState.show && incomingState.videoId && !incomingState.isGameOver;
+            const videoIdChanged = incomingState.videoId !== lastReceivedState.videoId;
+            const showStateChanged = shouldShowVideo !== lastReceivedState.show; // Compare intended show state
+
+            if (shouldShowVideo) {
+                // Condition: Video should be showing
+                if (videoIdChanged || showStateChanged || !isVideoCurrentlyVisible) {
+                    // Load/Reload if ID changed, or if show state turned true, or if not currently visible
+                    loadAndPlayVideo(incomingState.videoId); // Handles showing container
+                } else {
+                    // Video ID same, show state same, already visible: Just sync play/pause
+                     syncVideoPlaybackState(incomingState.isPlaying);
+                }
+            } else {
+                // Condition: Video should NOT be showing (or no video data)
+                if (isVideoCurrentlyVisible) { // Only hide if it's currently visible
+                    hideVideo(); // Handles hiding container and showing scoreboard
+                } else {
+                    // Ensure scoreboard is visible if video isn't meant to show AND isn't already visible
+                    scoreboardContent.classList.remove('hidden');
+                }
+            }
+
+
+             // --- Handle Spotify Playback State Sync (only if video is supposed to be showing) ---
+             // Check if the isPlaying state *specifically* changed, and if video *is* showing
+             if (shouldShowVideo && incomingState.isPlaying !== lastReceivedState.isPlaying) {
+                syncVideoPlaybackState(incomingState.isPlaying);
+             }
+
+
+            // --- Update Scoreboard Content (Scores, Winner, Status) ---
+            // This runs regardless of video state, but scoreboardContent might be hidden by video logic
+            scoreColumn1.innerHTML = ''; scoreColumn2.innerHTML = '';
+            winnerDisplayEl.classList.add('hidden');
+            statusMessageEl.classList.add('hidden');
+            scoreColumnsContainer.classList.add('hidden'); // Start hidden, show if players exist
+
+            if (!data) {
+                 statusMessageEl.textContent = `Waiting for game data for PIN ${currentPIN}...`;
+                 statusMessageEl.classList.remove('hidden');
+            } else if (incomingState.isGameOver && incomingState.winnerName) {
+                 // Display Winner Info
+                 winnerNameTextEl.textContent = escapeHTML(incomingState.winnerName);
+                 const shots = (incomingState.players.length >= 5 ? 2 : 1); // Recalculate shots based on received players
+                 winnerRewardTextEl.textContent = `mag ${shots} shot${shots > 1 ? 's' : ''} uitdelen!`;
+
+                 winnerFaceImgEl.src = ''; // Clear previous src
+                 winnerFaceImgEl.style.backgroundImage = ''; // Clear potential background image
+                 winnerFaceImgEl.classList.add('hidden'); // Hide initially
+
+                 if (incomingState.winnerFaceDataUrl) {
+                     winnerFaceImgEl.src = incomingState.winnerFaceDataUrl;
+                     winnerFaceImgEl.alt = `Winner: ${escapeHTML(incomingState.winnerName)}`;
+                     winnerFaceImgEl.classList.remove('hidden');
+                 } else {
+                     // Use default icon if no face URL
+                     winnerFaceImgEl.src = ''; // Ensure src is empty
+                     winnerFaceImgEl.style.backgroundImage = `url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23cccccc"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>')`;
+                     winnerFaceImgEl.alt = 'Winner (no face)';
+                     winnerFaceImgEl.classList.remove('hidden');
+                 }
+                 winnerDisplayEl.classList.remove('hidden');
+             } else {
+                 // Display Scores (if game not over)
+                 if (incomingState.players && incomingState.players.length > 0) {
+                     scoreColumnsContainer.classList.remove('hidden'); // Show columns if players exist
+                     incomingState.players.slice(0, MAX_DISPLAY_PLAYERS).forEach((player, index) => {
+                         const li = document.createElement('li'); li.className = 'player-item';
+
+                         const faceImg = document.createElement('img'); faceImg.className = 'player-face-img';
+                         faceImg.src = ''; // Clear previous src
+                         faceImg.style.backgroundImage = ''; // Clear potential background image
+                         faceImg.alt = `${escapeHTML(player.name)} face`;
+                         if (player.faceDataUrl) {
+                             faceImg.src = player.faceDataUrl;
+                         } else {
+                             // Use default icon if no face URL
+                             faceImg.src = ''; // Ensure src is empty
+                             faceImg.style.backgroundImage = `url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23cccccc"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>')`;
+                         }
+
+                         const nameSpan = document.createElement('span'); nameSpan.className = 'player-name'; nameSpan.textContent = escapeHTML(player.name);
+                         const scoreSpan = document.createElement('span'); scoreSpan.className = 'player-score'; scoreSpan.textContent = player.score;
+                         const infoWrapper = document.createElement('div'); infoWrapper.className = 'player-info-wrapper'; infoWrapper.appendChild(faceImg); infoWrapper.appendChild(nameSpan);
+                         li.appendChild(infoWrapper); li.appendChild(scoreSpan);
+                         if (index % 2 === 0) { scoreColumn1.appendChild(li); } else { scoreColumn2.appendChild(li); }
+                     });
+                     if (scoreColumn1.children.length === 0 && scoreColumn2.children.length === 0) {
+                         statusMessageEl.textContent = 'No players to display...'; statusMessageEl.classList.remove('hidden'); scoreColumnsContainer.classList.add('hidden');
+                     }
+                 } else {
+                      // No players in the data
+                      statusMessageEl.textContent = 'Waiting for players...'; statusMessageEl.classList.remove('hidden'); scoreColumnsContainer.classList.add('hidden');
+                 }
+             }
+
+            // --- Update last known state ---
+            lastReceivedState = { ...incomingState }; // Store the processed state
+
+        } // --- End UpdateDisplay Function ---
+
+        // --- HTML Escaping Helper ---
+         function escapeHTML(str) {
+             if (str === null || str === undefined) return '';
+             // Basic escaping for display purposes
+             return String(str)
+                 .replace(/&/g, '&amp;')
+                 .replace(/</g, '&lt;')
+                 .replace(/>/g, '&gt;')
+                 .replace(/"/g, '&quot;')
+                 .replace(/'/g, '&#039;');
+         }
+
+         // Initial state: Disable button until 4 digits are entered
+         loadButton.disabled = true;
+         // Hide elements initially using CSS classes/styles
+
+    </script>
+</body>
+</html>
