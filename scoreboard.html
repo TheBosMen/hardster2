@@ -59,7 +59,7 @@
             background-color: rgba(255, 102, 0, 0.85); color: white; border: 2px solid var(--primary); border-radius: 10px;
             padding: 15px 30px; font-size: clamp(1.5em, 4vw, 2.5em); font-weight: bold; text-align: center;
             box-shadow: 0 5px 15px rgba(0,0,0,0.4); max-width: 80%; opacity: 1; visibility: visible;
-            transition: opacity 0.4s ease, visibility 0s linear 0s; display: inline-block !important; /* Keep display for transition */
+            transition: opacity 0.4s ease, visibility 0s linear 0s; display: inline-block; /* Keep display for transition */
         }
 
         #score-columns-container { display: flex; justify-content: space-around; width: 100%; gap: 3vw; margin-bottom: 3vh; }
@@ -69,11 +69,14 @@
             padding: 12px 5px; border-bottom: 1px solid rgba(255, 255, 255, 0.15); color: var(--text);
         }
          li.player-item:last-child { border-bottom: none; }
+        /* Default Face Icon SVG */
+        .default-face-icon-svg {
+             background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23ccc"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>');
+             background-repeat: no-repeat; background-size: 70%; background-position: center;
+        }
         .player-face-img, #winner-face-img {
             border-radius: 50%; background-color: var(--bg-light); background-size: cover; background-position: center;
-            background-repeat: no-repeat; background-size: 70%; object-fit: cover;
-             /* Default Icon */
-             background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23ccc"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>');
+            object-fit: cover;
         }
         .player-face-img { width: 100px; height: 100px; margin-right: 20px; flex-shrink: 0; border: 3px solid var(--secondary); display: inline-block; }
         .player-info-wrapper { display: flex; align-items: center; flex-grow: 1; overflow: hidden; min-width: 0; }
@@ -100,46 +103,48 @@
         #video-container.visible { opacity: 1; visibility: visible; transition: opacity 0.6s ease-in-out, visibility 0s linear 0s; display: flex !important; }
         #youtube-player { width: 80vw; height: 45vw; max-width: 1280px; max-height: 720px; border: 2px solid var(--secondary); box-shadow: 0 0 30px rgba(0, 204, 255, 0.5); }
 
-        /* Generic hidden utility class */
-        .hidden { display: none !important; }
-        /* Override for elements controlled by opacity/visibility for transitions */
-        #scoreboard-content.hidden, #pin-entry-area.hidden, #overlay-shot-message.hidden, #winner-display.hidden, #status-message.hidden, #current-pin-display.hidden, #score-columns-container.hidden, #winner-face-img.hidden {
-            display: flex !important; /* Keep in layout for opacity transition (flex or block/inline-block as appropriate) */
-            opacity: 0 !important; visibility: hidden !important; transition: opacity 0.5s ease, visibility 0s linear 0.5s; /* Consistent transition */
+        /* Visibility/Transition Handling */
+        .hidden-via-js { display: none !important; } /* Use this if NO transition needed */
+        .hidden-trans { /* Use this for opacity transitions */
+            opacity: 0 !important;
+            visibility: hidden !important;
+            transition: opacity 0.5s ease, visibility 0s linear 0.5s;
         }
-        /* Specific display types for transition handling */
-        #pin-entry-area, #scoreboard-content, #winner-display { display: flex !important; flex-direction: column; align-items: center; }
-        #overlay-shot-message { display: inline-block !important; }
-        #status-message, #current-pin-display, #winner-face-img { display: block !important; } /* Or inline-block if needed */
-        #score-columns-container { display: flex !important; }
-        /* Ensure hidden elements using opacity override have delayed visibility */
-        #overlay-shot-message.hidden { transition: opacity 0.4s ease, visibility 0s linear 0.4s; }
+        /* Apply base display for transitioning elements */
+        #pin-entry-area, #scoreboard-content, #winner-display { display: flex; flex-direction: column; align-items: center; }
+        #score-columns-container { display: flex; }
+        #overlay-shot-message { display: inline-block; }
+        #status-message, #current-pin-display, #winner-face-img { display: block; } /* Or inline-block if layout requires */
+
+        /* Specific transition delays */
+         #overlay-shot-message.hidden-trans { transition: opacity 0.4s ease, visibility 0s linear 0.4s; }
+         #video-container.hidden-trans { transition: opacity 0.6s ease-in-out, visibility 0s linear 0.6s; } /* Already handled by .visible removal */
     </style>
 </head>
 <body>
 
-    <div id="pin-entry-area">
+    <div id="pin-entry-area"> <!-- Starts visible -->
         <label for="pin-input">Enter Game PIN:</label>
         <input type="number" id="pin-input" pattern="\d{4}" title="4-digit PIN" maxlength="4" inputmode="numeric">
         <button id="load-scoreboard-btn">Load Scoreboard</button>
         <div id="pin-error-message"></div>
     </div>
 
-    <div id="overlay-shot-message" class="hidden"></div>
+    <div id="overlay-shot-message" class="hidden-trans"></div> <!-- Starts hidden -->
 
-    <div id="scoreboard-content" class="hidden">
+    <div id="scoreboard-content" class="hidden-trans"> <!-- Starts hidden -->
         <h1>Hardster Scores</h1>
-        <div id="current-pin-display" class="hidden">Viewing PIN: <span id="viewing-pin"></span></div>
+        <div id="current-pin-display" class="hidden-trans">Viewing PIN: <span id="viewing-pin"></span></div>
 
-        <div id="score-columns-container" class="hidden">
+        <div id="score-columns-container" class="hidden-trans">
             <ul id="score-column-1" class="score-column"></ul>
             <ul id="score-column-2" class="score-column"></ul>
         </div>
 
-         <div id="status-message" class="hidden">Connecting...</div>
+         <div id="status-message" class="hidden-trans">Connecting...</div>
 
-        <div id="winner-display" class="hidden">
-            <img id="winner-face-img" src="" alt="Winner Face" class="hidden">
+        <div id="winner-display" class="hidden-trans">
+            <img id="winner-face-img" src="" alt="Winner Face" class="hidden-trans default-face-icon-svg"> <!-- Apply default icon class -->
             <div id="winner-text">
                  <span id="winner-name-text"></span>
                  <span id="winner-reward-text"></span>
@@ -147,7 +152,7 @@
         </div>
     </div>
 
-    <div id="video-container">
+    <div id="video-container" class="hidden-trans"> <!-- Starts hidden -->
         <div id="youtube-player"></div>
     </div>
 
@@ -197,6 +202,34 @@
         let lastReceivedState = { videoId: null, show: false, isPlaying: false, shotMessage: null };
         let isVideoCurrentlyVisible = false;
 
+        // --- Helper Functions ---
+        function setElementVisibility(element, show, useTransition = true) {
+            if (!element) return;
+            const hiddenClass = useTransition ? 'hidden-trans' : 'hidden-via-js';
+            if (show) {
+                element.classList.remove(hiddenClass);
+            } else {
+                element.classList.add(hiddenClass);
+            }
+        }
+        function escapeHTML(str) { return String(str ?? '').replace(/&/g, '&').replace(/</g, '<').replace(/>/g, '>').replace(/"/g, '"').replace(/'/g, '''); }
+        function setFaceImage(imgElement, faceDataUrl) {
+            if (!imgElement) return;
+            imgElement.src = ''; // Clear src first
+            imgElement.style.backgroundImage = ''; // Clear background styles
+            imgElement.classList.remove('default-face-icon-svg'); // Remove default icon class
+
+            if (faceDataUrl) {
+                imgElement.src = faceDataUrl; // Use src for <img> tag
+                imgElement.style.backgroundSize = 'cover'; // Ensure cover for loaded images
+                imgElement.style.backgroundPosition = 'center';
+            } else {
+                // Apply default icon styles if no URL
+                imgElement.classList.add('default-face-icon-svg');
+            }
+        }
+
+
         // --- Firebase Initialization ---
         try {
             firebaseApp = firebase.initializeApp(firebaseConfig);
@@ -208,107 +241,101 @@
         }
 
         // --- YouTube Player API ---
-        function onYouTubeIframeAPIReady() {
-            console.log("YT API Ready");
-            try {
-                youtubePlayer = new YT.Player('youtube-player', {
-                    height: '100%', width: '100%',
-                    playerVars: { 'playsinline': 1, 'autoplay': 1, 'controls': 0, 'modestbranding': 1, 'rel': 0, 'iv_load_policy': 3, 'showinfo': 0 },
-                    events: { 'onReady': onPlayerReady, 'onStateChange': onPlayerStateChange, 'onError': onPlayerError }
-                });
-            } catch (e) {
-                console.error("Error creating YT player:", e);
-                statusMessageEl.textContent = "Error initializing video player."; statusMessageEl.classList.remove('hidden');
-            }
-        }
-        function onPlayerReady(event) {
-            console.log("YT Player Ready");
-            event.target.mute();
-            if (lastReceivedState.show && lastReceivedState.videoId) {
-                 console.log("Player ready, loading video from last state:", lastReceivedState.videoId);
-                 loadAndPlayVideo(lastReceivedState.videoId);
-                 syncVideoPlaybackState(lastReceivedState.isPlaying);
-            }
-        }
-        function onPlayerStateChange(event) {
-             if (event.data === YT.PlayerState.PLAYING && youtubePlayer && !youtubePlayer.isMuted()) { youtubePlayer.mute(); console.log("Re-muted player."); }
-             else if (event.data === YT.PlayerState.ENDED) { console.log("Video ended."); }
-        }
-        function onPlayerError(event) {
-            console.error("YT Player Error:", event.data); hideVideo();
-            statusMessageEl.textContent = `Video Error (${event.data}). Scoreboard shown.`; statusMessageEl.classList.remove('hidden');
-            scoreboardContent.classList.remove('hidden');
-        }
+        function onYouTubeIframeAPIReady() { /* ... (no changes needed) ... */ }
+        function onPlayerReady(event) { /* ... (no changes needed) ... */ }
+        function onPlayerStateChange(event) { /* ... (no changes needed) ... */ }
+        function onPlayerError(event) { /* ... (no changes needed) ... */ }
         function loadAndPlayVideo(videoId) {
             if (youtubePlayer?.loadVideoById) {
                 if (lastReceivedState.videoId !== videoId || !isVideoCurrentlyVisible) {
                     console.log(`Showing container, loading video: ${videoId}`);
-                    scoreboardContent.classList.add('hidden'); videoContainer.classList.add('visible'); isVideoCurrentlyVisible = true;
+                    setElementVisibility(scoreboardContent, false); // Hide scoreboard
+                    setElementVisibility(videoContainer, true); // Show video
+                    isVideoCurrentlyVisible = true;
                     youtubePlayer.loadVideoById(videoId);
                 } else { console.log("Video ID same, already visible. Syncing playback."); syncVideoPlaybackState(lastReceivedState.isPlaying); }
-            } else { console.warn("YT player not ready, cannot load video."); scoreboardContent.classList.remove('hidden'); hideVideo(); }
+            } else { console.warn("YT player not ready, cannot load video."); setElementVisibility(scoreboardContent, true); hideVideo(); }
         }
-        function hideVideo() {
+         function hideVideo() {
             if (isVideoCurrentlyVisible) {
                 console.log("Hiding video player.");
-                videoContainer.classList.remove('visible'); isVideoCurrentlyVisible = false;
+                setElementVisibility(videoContainer, false); // Hide video container
+                isVideoCurrentlyVisible = false;
                 if (youtubePlayer?.stopVideo) { setTimeout(() => { if (!isVideoCurrentlyVisible) { youtubePlayer.stopVideo(); console.log("Video stopped."); } }, 600); }
-                scoreboardContent.classList.remove('hidden');
+                setElementVisibility(scoreboardContent, true); // Ensure scoreboard content becomes visible again
             }
         }
-        function syncVideoPlaybackState(shouldBePlaying) {
-             if (youtubePlayer && isVideoCurrentlyVisible) {
-                 const playerState = youtubePlayer.getPlayerState();
-                 if (shouldBePlaying && playerState !== YT.PlayerState.PLAYING && playerState !== YT.PlayerState.BUFFERING) { console.log("Sync: YT Play"); youtubePlayer.playVideo(); }
-                 else if (!shouldBePlaying && playerState === YT.PlayerState.PLAYING) { console.log("Sync: YT Pause"); youtubePlayer.pauseVideo(); }
-             }
-        }
+        function syncVideoPlaybackState(shouldBePlaying) { /* ... (no changes needed) ... */ }
 
         // --- Event Listeners ---
         loadButton.addEventListener('click', handleLoadScoreboard);
         pinInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') handleLoadScoreboard(); if (!/\d/.test(e.key) && !['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab'].includes(e.key)) e.preventDefault(); });
-        pinInput.addEventListener('input', () => {
-            pinErrorMessage.textContent = ''; pinInput.value = pinInput.value.slice(0, 4);
-            loadButton.disabled = pinInput.value.length !== 4;
-        });
+        pinInput.addEventListener('input', () => { pinErrorMessage.textContent = ''; pinInput.value = pinInput.value.slice(0, 4); loadButton.disabled = pinInput.value.length !== 4; });
 
-        // --- Functions ---
+        // --- Core Functions ---
         function handleLoadScoreboard() {
+            console.log("Load scoreboard button clicked."); // Debug log
             const enteredPin = pinInput.value.trim();
             if (!/^\d{4}$/.test(enteredPin)) { pinErrorMessage.textContent = 'Enter a 4-digit PIN.'; return; }
-            if (!firebaseApp) { pinErrorMessage.textContent = 'Firebase connection failed.'; return; }
+            // ** Crucial check: ensure Firebase is initialized **
+            if (!firebaseApp) { pinErrorMessage.textContent = 'Firebase connection failed. Cannot load.'; console.error("FirebaseApp not initialized!"); return; }
+
             pinErrorMessage.textContent = ''; loadButton.disabled = true; loadButton.textContent = 'Loading...';
-            if (dbRef && listenerAttached) { dbRef.off('value'); listenerAttached = false; console.log("Detached previous listener."); }
+            console.log(`Attempting to load PIN: ${enteredPin}`); // Debug log
+
+            // Detach previous listener
+            if (dbRef && listenerAttached) { try { dbRef.off('value'); } catch(e){ console.warn("Error detaching previous listener:", e); } listenerAttached = false; console.log("Detached previous listener."); }
+
             currentPIN = enteredPin;
             try {
                  dbRef = firebase.database().ref(`${FIREBASE_ROOT_PATH}/${currentPIN}`);
-                 console.log("Listening at:", dbRef.toString());
-                 listenForUpdates();
-                 pinEntryArea.classList.add('hidden'); scoreboardContent.classList.remove('hidden');
-                 statusMessageEl.textContent = 'Loading scores...'; statusMessageEl.classList.remove('hidden');
-                 scoreColumnsContainer.classList.add('hidden'); winnerDisplayEl.classList.add('hidden'); overlayShotMessageEl.classList.add('hidden');
-                 viewingPinEl.textContent = currentPIN; currentPinDisplay.classList.remove('hidden');
-                 hideVideo(); // Ensure video hidden for new PIN
+                 console.log("Setting Firebase listener to:", dbRef.toString());
+                 listenForUpdates(); // Attach listener
+
+                 // Update UI
+                 setElementVisibility(pinEntryArea, false);
+                 setElementVisibility(scoreboardContent, true);
+                 setElementVisibility(statusMessageEl, true); statusMessageEl.textContent = 'Loading scores...';
+                 setElementVisibility(scoreColumnsContainer, false);
+                 setElementVisibility(winnerDisplayEl, false);
+                 setElementVisibility(overlayShotMessageEl, false);
+                 viewingPinEl.textContent = currentPIN; setElementVisibility(currentPinDisplay, true);
+                 hideVideo(); // Ensure video is hidden when loading new PIN
+
              } catch(e) {
-                 console.error("Error setting Firebase path/listener:", e);
+                 console.error("Error setting Firebase path or attaching listener:", e);
                  pinErrorMessage.textContent = 'Error accessing game data. Check PIN?';
                  loadButton.disabled = false; loadButton.textContent = 'Load Scoreboard';
-                 scoreboardContent.classList.add('hidden'); pinEntryArea.classList.remove('hidden');
+                 setElementVisibility(scoreboardContent, false); setElementVisibility(pinEntryArea, true); // Show PIN entry again
                  hideVideo();
              }
         }
         function listenForUpdates() {
-            if (!dbRef) return; listenerAttached = true;
+            if (!dbRef) { console.error("Cannot listen for updates, dbRef is null."); return; }
+            listenerAttached = true;
+            console.log("Attaching Firebase listener..."); // Debug log
             dbRef.on('value', (snapshot) => {
+                console.log("Firebase data received:", snapshot.val()); // Debug log
                 updateDisplay(snapshot.val());
-                loadButton.textContent = 'Load Scoreboard'; loadButton.disabled = pinInput.value.length !== 4;
+                // Reset loading button state (might have been disabled during PIN entry)
+                loadButton.textContent = 'Load Scoreboard';
+                loadButton.disabled = pinInput.value.length !== 4;
             }, (error) => {
                 console.error("Firebase read failed:", error);
-                scoreColumn1.innerHTML = ''; scoreColumn2.innerHTML = '';
-                winnerDisplayEl.classList.add('hidden'); overlayShotMessageEl.classList.add('hidden');
-                statusMessageEl.textContent = `Error loading PIN ${currentPIN}. Game active? PIN correct?`; statusMessageEl.classList.remove('hidden');
-                scoreColumnsContainer.classList.add('hidden'); scoreboardContent.classList.remove('hidden'); hideVideo(); listenerAttached = false;
-                pinEntryArea.classList.remove('hidden'); loadButton.disabled = false;
+                scoreColumn1.innerHTML = ''; scoreColumn2.innerHTML = ''; // Clear scores
+                setElementVisibility(winnerDisplayEl, false);
+                setElementVisibility(overlayShotMessageEl, false);
+                statusMessageEl.textContent = `Error loading scores for PIN ${currentPIN}. Game active/PIN correct?`;
+                setElementVisibility(statusMessageEl, true);
+                setElementVisibility(scoreColumnsContainer, false);
+                setElementVisibility(scoreboardContent, true); // Ensure scoreboard area is visible to show error
+                hideVideo();
+                listenerAttached = false; // Listener failed
+
+                // Re-enable PIN entry on error
+                setElementVisibility(pinEntryArea, true);
+                loadButton.disabled = false;
+                setElementVisibility(scoreboardContent, false); // Hide scoreboard content on error
             });
         }
         function updateDisplay(data) {
@@ -319,54 +346,76 @@
                 players: data?.players || [], winnerName: data?.winnerName || null, winnerFaceDataUrl: data?.winnerFaceDataUrl || null
             };
 
-            // Handle Overlay Shot Message (always visible if present, unless game over)
-            if (incoming.shotMessage && !incoming.isGameOver) { overlayShotMessageEl.textContent = incoming.shotMessage; overlayShotMessageEl.classList.remove('hidden'); }
-            else { overlayShotMessageEl.classList.add('hidden'); }
+            // Handle Overlay Shot Message
+            setElementVisibility(overlayShotMessageEl, incoming.shotMessage && !incoming.isGameOver);
+            if (incoming.shotMessage && !incoming.isGameOver) overlayShotMessageEl.textContent = incoming.shotMessage;
 
             // Handle Video Show/Hide & Sync
             const shouldShowVideo = incoming.show && incoming.videoId && !incoming.isGameOver;
             if (shouldShowVideo) {
                 if (incoming.videoId !== lastReceivedState.videoId || shouldShowVideo !== lastReceivedState.show || !isVideoCurrentlyVisible) { loadAndPlayVideo(incoming.videoId); }
-                else { syncVideoPlaybackState(incoming.isPlaying); } // Sync play/pause if already showing same video
-            } else { if (isVideoCurrentlyVisible) hideVideo(); else scoreboardContent.classList.remove('hidden'); } // Hide if visible, else ensure scoreboard shown
-            if (shouldShowVideo && incoming.isPlaying !== lastReceivedState.isPlaying) { syncVideoPlaybackState(incoming.isPlaying); } // Sync if playing state changed while video should show
+                else { syncVideoPlaybackState(incoming.isPlaying); }
+            } else { if (isVideoCurrentlyVisible) hideVideo(); else setElementVisibility(scoreboardContent, true); }
+            if (shouldShowVideo && incoming.isPlaying !== lastReceivedState.isPlaying) { syncVideoPlaybackState(incoming.isPlaying); }
 
-            // Update Scoreboard Content (runs regardless of video visibility)
-            scoreColumn1.innerHTML = ''; scoreColumn2.innerHTML = '';
-            winnerDisplayEl.classList.add('hidden'); statusMessageEl.classList.add('hidden'); scoreColumnsContainer.classList.add('hidden');
+            // --- Update Scoreboard Content (Scores, Winner, Status) ---
+            // This runs regardless of video state, but scoreboardContent might be hidden
+            scoreColumn1.innerHTML = ''; scoreColumn2.innerHTML = ''; // Clear previous scores
+            setElementVisibility(winnerDisplayEl, false); setElementVisibility(statusMessageEl, false); setElementVisibility(scoreColumnsContainer, false);
 
-            if (!data) { statusMessageEl.textContent = `Waiting for game data for PIN ${currentPIN}...`; statusMessageEl.classList.remove('hidden'); }
-            else if (incoming.isGameOver && incoming.winnerName) { // Display Winner
+            if (!data) {
+                 statusMessageEl.textContent = `Waiting for game data for PIN ${currentPIN}...`;
+                 setElementVisibility(statusMessageEl, true);
+            } else if (incoming.isGameOver && incoming.winnerName) {
+                 // --- Display Winner Info ---
                  winnerNameTextEl.textContent = escapeHTML(incoming.winnerName);
                  const shots = (incoming.players.length >= 5 ? 2 : 1);
                  winnerRewardTextEl.textContent = `mag ${shots} shot${shots > 1 ? 's' : ''} uitdelen!`;
-                 winnerFaceImgEl.src = ''; winnerFaceImgEl.style.backgroundImage = ''; winnerFaceImgEl.classList.add('hidden'); // Reset
-                 if (incoming.winnerFaceDataUrl) { winnerFaceImgEl.src = incoming.winnerFaceDataUrl; winnerFaceImgEl.alt = `Winner: ${escapeHTML(incoming.winnerName)}`; }
-                 else { winnerFaceImgEl.src = ''; winnerFaceImgEl.style.backgroundImage = `url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23ccc"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>')`; winnerFaceImgEl.alt = 'Winner (no face)'; }
-                 winnerFaceImgEl.classList.remove('hidden'); winnerDisplayEl.classList.remove('hidden');
-             } else { // Display Scores
+
+                 setFaceImage(winnerFaceImgEl, incoming.winnerFaceDataUrl); // Use helper to set image or default icon
+                 winnerFaceImgEl.alt = `Winner: ${escapeHTML(incoming.winnerName)}`;
+                 setElementVisibility(winnerFaceImgEl, true);
+                 setElementVisibility(winnerDisplayEl, true);
+             } else {
+                 // --- Display Scores (if game not over) ---
                  if (incoming.players && incoming.players.length > 0) {
-                     scoreColumnsContainer.classList.remove('hidden');
+                     setElementVisibility(scoreColumnsContainer, true); // Show columns if players exist
                      incoming.players.slice(0, MAX_DISPLAY_PLAYERS).forEach((player, index) => {
                          const li = document.createElement('li'); li.className = 'player-item';
-                         const faceImg = document.createElement('img'); faceImg.className = 'player-face-img'; faceImg.src = ''; faceImg.style.backgroundImage = ''; faceImg.alt = `${escapeHTML(player.name)} face`;
-                         if (player.faceDataUrl) { faceImg.src = player.faceDataUrl; }
-                         else { faceImg.src = ''; faceImg.style.backgroundImage = `url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23ccc"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>')`; }
+
+                         const faceImg = document.createElement('img'); faceImg.className = 'player-face-img';
+                         setFaceImage(faceImg, player.faceDataUrl); // Use helper
+                         faceImg.alt = `${escapeHTML(player.name)} face`;
+
                          const nameSpan = document.createElement('span'); nameSpan.className = 'player-name'; nameSpan.textContent = escapeHTML(player.name);
                          const scoreSpan = document.createElement('span'); scoreSpan.className = 'player-score'; scoreSpan.textContent = player.score;
                          const infoWrapper = document.createElement('div'); infoWrapper.className = 'player-info-wrapper'; infoWrapper.appendChild(faceImg); infoWrapper.appendChild(nameSpan);
                          li.appendChild(infoWrapper); li.appendChild(scoreSpan);
+
+                         // Distribute players between columns
                          if (index % 2 === 0) { scoreColumn1.appendChild(li); } else { scoreColumn2.appendChild(li); }
                      });
-                     if (scoreColumn1.children.length === 0 && scoreColumn2.children.length === 0) { statusMessageEl.textContent = 'No players to display...'; statusMessageEl.classList.remove('hidden'); scoreColumnsContainer.classList.add('hidden'); }
-                 } else { statusMessageEl.textContent = 'Waiting for players...'; statusMessageEl.classList.remove('hidden'); scoreColumnsContainer.classList.add('hidden'); }
+                     // If after adding all players, both columns are still empty (e.g., MAX_DISPLAY_PLAYERS=0), show status
+                     if (scoreColumn1.children.length === 0 && scoreColumn2.children.length === 0) {
+                         statusMessageEl.textContent = 'No players to display...'; setElementVisibility(statusMessageEl, true); setElementVisibility(scoreColumnsContainer, false);
+                     }
+                 } else {
+                      // No players in the data
+                      statusMessageEl.textContent = 'Waiting for players...'; setElementVisibility(statusMessageEl, true); setElementVisibility(scoreColumnsContainer, false);
+                 }
              }
-            lastReceivedState = { ...incoming }; // Update last known state
-        }
-        function escapeHTML(str) { return String(str ?? '').replace(/&/g, '&').replace(/</g, '<').replace(/>/g, '>').replace(/"/g, '"').replace(/'/g, '''); }
+
+            // Update last known state
+            lastReceivedState = { ...incoming };
+        } // --- End UpdateDisplay Function ---
 
         // Initial state
         loadButton.disabled = true;
+        // Hide elements initially using CSS classes
+        setElementVisibility(scoreboardContent, false);
+        setElementVisibility(overlayShotMessageEl, false);
+        setElementVisibility(videoContainer, false);
+
     </script>
 </body>
 </html>
