@@ -157,9 +157,9 @@
         }
 
         /* Hide the main large login button area */
-        #login-area {
+        /* #login-area {
              display: none !important;
-        }
+        } */
         /* --- End Menu Styles --- */
 
 
@@ -784,6 +784,9 @@
         let currentShotMessage = null; // For storing the shot message
         let currentVideoIdForScoreboard = null; // YouTube video ID for scoreboard
         let shouldShowVideoOnScoreboard = false; // Flag to show video
+
+        // Audio for timer sound
+        const timerSound = new Audio('timer.mp3');
 
         // --- Firebase Initialization ---
         let firebaseApp;
@@ -1558,6 +1561,7 @@
 
              const started = await playTrack(currentTrack.uri); // This updates `isPlaying` state
              if (started) {
+                 timerSound.play().catch(e => console.warn("Failed to play timer sound:", e)); // Play timer sound
                  saveGameState(); // Save state with new track index (and video off state, updated isPlaying)
                  updateExternalScoreboard(); // Send update reflecting new song started (video off, isPlaying true)
              } else {
@@ -1832,7 +1836,7 @@
             console.log("Cleaned up tokens, PIN, game state, and variables.");
         }
         function updateUIAfterAuthCheck(isAuthenticated) {
-             toggleVisibility(el.loginArea, false); toggleVisibility(el.menuLoginItem, !isAuthenticated); toggleVisibility(el.menuLogoutItem, isAuthenticated);
+             toggleVisibility(el.loginArea, !isAuthenticated); toggleVisibility(el.menuLoginItem, !isAuthenticated); toggleVisibility(el.menuLogoutItem, isAuthenticated);
              if (!isAuthenticated) { toggleVisibility(el.devSelector, false); toggleVisibility(el.playerSetup, false); toggleVisibility(el.playlistInputArea, false); toggleVisibility(el.gameplayArea, false); toggleVisibility(el.gameOver, false); toggleVisibility(el.menuQuitItem, false); el.devList.innerHTML = ''; el.playerList.innerHTML = ''; el.playlistInput.value = ''; showStatus("Verbind met Spotify om door te gaan"); }
         }
         async function logout() {
@@ -1904,6 +1908,7 @@
             el.scoreBoard?.addEventListener('click', (e) => { const target = e.target.closest('.score-btn'); if (target && !target.disabled) { const playerId = target.dataset.playerId; const isIncrement = target.classList.contains('increment'); updateScore(playerId, isIncrement ? 1 : -1); } });
             el.newGameBtn?.addEventListener('click', setupNewGame);
             el.menuToggleBtn?.addEventListener('click', toggleMenu);
+            el.loginBtn?.addEventListener('click', login); // Add this line for the main login button
             el.menuLoginBtn?.addEventListener('click', () => { login(); if (el.collapsibleMenu && !el.collapsibleMenu.classList.contains('hidden')) toggleMenu(); });
             el.menuLogoutBtn?.addEventListener('click', () => { logout(); });
             el.menuQuitBtn?.addEventListener('click', () => { quitGame(); });
